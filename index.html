@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shoreline - Dashboard de Ventas</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0a192f;
+            --accent-color: #64ffda;
+            --text-color: #e6f1ff;
+            --glass-bg: rgba(17, 34, 64, 0.7);
+            --glass-border: rgba(100, 255, 218, 0.1);
+            --font-main: 'Montserrat', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            overflow: hidden; /* Prevent scrolling on TV */
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            background: radial-gradient(circle at 50% 50%, #112240 0%, #0a192f 100%);
+        }
+
+        /* --- Header --- */
+        header {
+            height: 120px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            background: rgba(10, 25, 47, 0.9);
+            border-bottom: 1px solid var(--glass-border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-container img {
+            height: 80px;
+            width: auto;
+            filter: drop-shadow(0 0 10px rgba(100, 255, 218, 0.3));
+        }
+
+        .dashboard-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: var(--accent-color);
+            text-transform: uppercase;
+        }
+
+        .total-container {
+            text-align: right;
+        }
+
+        .total-label {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        .total-value {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            text-shadow: 0 0 15px rgba(100, 255, 218, 0.4);
+            transition: all 0.5s ease;
+        }
+
+        /* --- Main Content (Grid) --- */
+        main {
+            flex: 1;
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Two columns for legibility */
+            gap: 40px;
+            overflow-y: hidden; /* Hide overflow */
+            max-width: 1600px; /* Constrain width to keep it centered visually */
+            margin: 0 auto; /* Center horizontally */
+            width: 100%;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Agent Card */
+        .agent-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 15px 25px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border-color: var(--accent-color);
+        }
+
+        .rank {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.5);
+            width: 50px;
+        }
+
+        .agent-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .agent-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .agent-id {
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            opacity: 0.8;
+        }
+
+        .agent-score {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-color);
+        }
+
+        /* Top 3 Highlighting */
+        .agent-card.rank-1 { background: rgba(100, 255, 218, 0.15); border-color: var(--accent-color); }
+        .agent-card.rank-2 { background: rgba(100, 255, 218, 0.10); }
+        .agent-card.rank-3 { background: rgba(100, 255, 218, 0.05); }
+
+        .rank-1 .rank { color: #ffd700; }
+        .rank-2 .rank { color: #c0c0c0; }
+        .rank-3 .rank { color: #cd7f32; }
+
+        /* --- Notification Overlay --- */
+        #celebration-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(15px);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none; /* Allow clicking through when hidden */
+            transition: opacity 0.5s ease;
+        }
+
+        #celebration-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .celebration-content {
+            text-align: center;
+            animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .celebration-title {
+            font-size: 3rem;
+            color: #fff;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+
+        .celebration-agent {
+            font-size: 5rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(100, 255, 218, 0.6);
+        }
+
+        .celebration-detail {
+            font-size: 2.5rem;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* Loading State */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--accent-color);
+            font-size: 1.5rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        /* Error Message */
+        .error-msg {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff6b6b;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <!-- Looks for Shoreline.ico locally -->
+            <img src="Shoreline.ico" alt="Shoreline Logo" onerror="this.style.display='none'">
+            <div class="dashboard-title">Shoreline</div>
+        </div>
+        <div class="total-container">
+            <div class="total-label">Ventas Totales</div>
+            <div class="total-value" id="grand-total">0</div>
+        </div>
+    </header>
+
+    <main id="main-grid">
+        <div class="loading">Cargando datos del océano...</div>
+    </main>
+
+    <div id="celebration-overlay">
+        <div class="celebration-content">
+            <div class="celebration-title">XFER</div>
+            <div class="celebration-agent" id="celeb-agent-name">Nombre Agente</div>
+            <div class="celebration-detail">+<span id="celeb-amount">1</span></div>
+        </div>
+    </div>
+
+    <div class="error-msg" id="error-display"></div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // REPLACE THE URL BELOW WITH YOUR PUBLISHED GOOGLE SHEET CSV URL
+        const CSV_URL = 'INSERT_YOUR_GOOGLE_SHEET_CSV_URL_HERE';
+        const FETCH_INTERVAL = 5000; // 5 seconds
+        const CELEBRATION_DURATION = 5000; // 5 seconds
+
+        // --- STATE ---
+        let previousData = {}; // Map: ID -> Xfers
+        let isFirstLoad = true;
+        let celebrationQueue = [];
+        let isCelebrating = false;
+
+        // --- ELEMENTS ---
+        const mainGrid = document.getElementById('main-grid');
+        const grandTotalEl = document.getElementById('grand-total');
+        const overlay = document.getElementById('celebration-overlay');
+        const celebNameEl = document.getElementById('celeb-agent-name');
+        const celebAmountEl = document.getElementById('celeb-amount');
+        const errorDisplay = document.getElementById('error-display');
+
+        // --- MAIN LOOP ---
+        async function init() {
+            await fetchData();
+            setInterval(fetchData, FETCH_INTERVAL);
+            processCelebrationQueue();
+        }
+
+        async function fetchData() {
+            try {
+                // Determine if we are in a testing environment without a real URL
+                let responseText = "";
+                if (CSV_URL.includes('INSERT_YOUR')) {
+                    // console.warn("URL de CSV no configurada. Usando datos de prueba si no hay datos.");
+                    // For demonstration purposes, if the URL is not set, we might want to just show an error or mock data.
+                    // However, the user asked for the code to include the comment where to put the URL.
+                    // I will attempt to fetch, and if it fails (which it will), I'll handle the error.
+                    // But to make the UI visible initially, I'll provide a check.
+
+                    // If this is running in a dev environment/file system, fetch might fail on cross-origin or file protocol.
+                    // We will proceed with fetch and catch errors.
+                }
+
+                const response = await fetch(CSV_URL);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                responseText = await response.text();
+
+                const data = parseCSV(responseText);
+                updateDashboard(data);
+                errorDisplay.style.display = 'none';
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                // If it's the first load and we fail (likely due to placeholder URL), show empty state or mock for visual check
+                if (isFirstLoad && CSV_URL.includes('INSERT_YOUR')) {
+                    // Optional: Load mock data for visualization if the user hasn't set the URL yet
+                    // mockData();
+                    errorDisplay.textContent = "Configura la URL del CSV en el código.";
+                    errorDisplay.style.display = 'block';
+                } else {
+                     errorDisplay.textContent = "Error de conexión: " + error.message;
+                     errorDisplay.style.display = 'block';
+                }
+            }
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split(/\r\n|\n/);
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+            // Expected headers: id, agente, xfers (case insensitive)
+            const idIndex = headers.indexOf('id');
+            const agentIndex = headers.indexOf('agente');
+            const xfersIndex = headers.indexOf('xfers');
+
+            if (idIndex === -1 || agentIndex === -1 || xfersIndex === -1) {
+                throw new Error("Formato CSV incorrecto. Se requieren columnas: ID, Agente, Xfers");
+            }
+
+            const agents = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                // Handle commas inside quotes if necessary, but simple split for now as per "Google Sheet CSV" standard usually handles this
+                // For a robust solution, a regex or parser is better, but simple split is usually fine for simple names/numbers.
+                const currentLine = lines[i].split(',');
+                if (currentLine.length < 3) continue;
+
+                const id = currentLine[idIndex].trim();
+                const name = currentLine[agentIndex].trim();
+                const xfers = parseInt(currentLine[xfersIndex].trim()) || 0;
+
+                agents.push({ id, name, xfers });
+            }
+
+            return agents;
+        }
+
+        function updateDashboard(agents) {
+            // 1. Sort by Xfers DESC
+            agents.sort((a, b) => b.xfers - a.xfers);
+
+            // 2. Calculate Total
+            const totalXfers = agents.reduce((sum, agent) => sum + agent.xfers, 0);
+            animateValue(grandTotalEl, parseInt(grandTotalEl.textContent.replace(/,/g, '')) || 0, totalXfers, 1000);
+
+            // 3. Check for New Sales (Logic)
+            checkForSales(agents);
+
+            // 4. Update Previous Data
+            agents.forEach(agent => {
+                previousData[agent.id] = agent.xfers;
+            });
+            isFirstLoad = false;
+
+            // 5. Render Top 20
+            renderGrid(agents.slice(0, 20));
+        }
+
+        function checkForSales(agents) {
+            if (isFirstLoad) return; // Don't celebrate on initial load
+
+            agents.forEach(agent => {
+                const prevXfers = previousData[agent.id] || 0;
+                if (agent.xfers > prevXfers) {
+                    const diff = agent.xfers - prevXfers;
+                    // Queue celebration
+                    celebrationQueue.push({
+                        name: agent.name,
+                        amount: diff
+                    });
+                }
+            });
+        }
+
+        function renderGrid(topAgents) {
+            // Clear current grid (or diff it for better performance, but full re-render is fine for 25 items)
+            mainGrid.innerHTML = '';
+
+            // Create columns
+            const col1 = document.createElement('div');
+            col1.className = 'column';
+            const col2 = document.createElement('div');
+            col2.className = 'column';
+
+            topAgents.forEach((agent, index) => {
+                const rank = index + 1;
+                const card = document.createElement('div');
+                card.className = `agent-card rank-${rank}`;
+                card.innerHTML = `
+                    <div class="rank">#${rank}</div>
+                    <div class="agent-info">
+                        <div class="agent-name">${agent.name}</div>
+                        <div class="agent-id">ID: ${agent.id}</div>
+                    </div>
+                    <div class="agent-score">${agent.xfers}</div>
+                `;
+
+                if (index < 10) { // Split evenly (10 and 10 for 20 items)
+                    col1.appendChild(card);
+                } else {
+                    col2.appendChild(card);
+                }
+            });
+
+            mainGrid.appendChild(col1);
+            mainGrid.appendChild(col2);
+        }
+
+        // --- CELEBRATION SYSTEM ---
+        function processCelebrationQueue() {
+            setInterval(() => {
+                if (!isCelebrating && celebrationQueue.length > 0) {
+                    const event = celebrationQueue.shift();
+                    triggerCelebration(event);
+                }
+            }, 500); // Check every 500ms
+        }
+
+        function triggerCelebration(event) {
+            isCelebrating = true;
+
+            // Update Overlay Content
+            celebNameEl.textContent = event.name;
+            celebAmountEl.textContent = event.amount;
+
+            // Show Overlay
+            overlay.classList.add('active');
+
+            // Fire Confetti
+            fireConfetti();
+
+            // Hide after duration
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                isCelebrating = false;
+            }, CELEBRATION_DURATION);
+        }
+
+        function fireConfetti() {
+            const duration = CELEBRATION_DURATION;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#64ffda', '#ffffff', '#0a192f']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#64ffda', '#ffffff', '#0a192f']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        // --- UTILS ---
+        function animateValue(obj, start, end, duration) {
+            if (start === end) return;
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    obj.innerHTML = end;
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // --- START ---
+        // For testing purposes, we can inject a mock function if the URL is invalid
+        if (CSV_URL.includes('INSERT_YOUR')) {
+           // Auto-inject mock data for preview if user just opens the file
+           setTimeout(() => {
+               if (document.querySelector('.loading')) {
+                   console.log("Using Mock Data for Preview");
+                   const mockCSV = `ID,Agente,Xfers
+101,Juan Pérez,50
+102,Maria Garcia,45
+103,Carlos Lopez,42
+104,Ana Martinez,38
+105,Luisa Hernandez,35
+106,Pedro Sanchez,33
+107,Laura Torres,30
+108,Miguel Ramirez,28
+109,Sofia Diaz,25
+110,Diego Vasquez,22
+111,Elena Ruiz,20
+112,Javier Morales,18
+113,Carmen Jimenez,15
+114,Ricardo Ortiz,12
+115,Isabel Castro,10
+116,Fernando Vargas,8
+117,Patricia Ramos,6
+118,Roberto Flores,5
+119,Adriana Acosta,4
+120,Gabriel Rojas,3
+121,Natalia Cabrera,2
+122,Francisco Reyes,1
+123,Daniela Medina,1
+124,Manuel Silva,0
+125,Veronica Cruz,0`;
+                   const data = parseCSV(mockCSV);
+                   updateDashboard(data);
+
+                   // Simulate a sale after 3 seconds
+                   setTimeout(() => {
+                       console.log("Simulating Sale");
+                       const newData = JSON.parse(JSON.stringify(data)); // Deep copy
+                       newData[0].xfers += 1; // Juan Perez sells one
+                       updateDashboard(newData);
+                   }, 3000);
+               }
+           }, 1000);
+        }
+
+        init();
+
+    </script>
+</body>
+</html>
