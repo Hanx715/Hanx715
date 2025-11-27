@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shoreline Predator - Dashboard de Ventas</title>
+    <title>Shoreline - Dashboard de Ventas</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -97,8 +97,11 @@
             padding: 30px;
             display: grid;
             grid-template-columns: 1fr 1fr; /* Two columns for legibility */
-            gap: 30px;
+            gap: 40px;
             overflow-y: hidden; /* Hide overflow */
+            max-width: 1600px; /* Constrain width to keep it centered visually */
+            margin: 0 auto; /* Center horizontally */
+            width: 100%;
         }
 
         .column {
@@ -262,7 +265,7 @@
         <div class="logo-container">
             <!-- Looks for Shoreline.ico locally -->
             <img src="Shoreline.ico" alt="Shoreline Logo" onerror="this.style.display='none'">
-            <div class="dashboard-title">Shoreline Predator</div>
+            <div class="dashboard-title">Shoreline</div>
         </div>
         <div class="total-container">
             <div class="total-label">Ventas Totales</div>
@@ -276,7 +279,7 @@
 
     <div id="celebration-overlay">
         <div class="celebration-content">
-            <div class="celebration-title">¡NUEVA VENTA!</div>
+            <div class="celebration-title">XFER</div>
             <div class="celebration-agent" id="celeb-agent-name">Nombre Agente</div>
             <div class="celebration-detail">+<span id="celeb-amount">1</span></div>
         </div>
@@ -398,8 +401,8 @@
             });
             isFirstLoad = false;
 
-            // 5. Render Top 25
-            renderGrid(agents.slice(0, 25));
+            // 5. Render Top 20
+            renderGrid(agents.slice(0, 20));
         }
 
         function checkForSales(agents) {
@@ -441,7 +444,7 @@
                     <div class="agent-score">${agent.xfers}</div>
                 `;
 
-                if (index < 13) { // Split evenly-ish (13 and 12 for 25 items)
+                if (index < 10) { // Split evenly (10 and 10 for 20 items)
                     col1.appendChild(card);
                 } else {
                     col2.appendChild(card);
