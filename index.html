@@ -264,7 +264,7 @@
     <header>
         <div class="logo-container">
             <!-- Looks for Shoreline.ico locally -->
-            <img src="Shoreline.ico" alt="Shoreline Logo" onerror="this.style.display='none'">
+            <img src="Shoreline.ico" alt="Shoreline Logo" onerror="this.style.display='none'"> 
             <div class="dashboard-title">Shoreline</div>
         </div>
         <div class="total-container">
@@ -290,7 +290,7 @@
     <script>
         // --- CONFIGURATION ---
         // REPLACE THE URL BELOW WITH YOUR PUBLISHED GOOGLE SHEET CSV URL
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv_GOOGLE_SHEET_CSV_URL_HERE';
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv'; 
         const FETCH_INTERVAL = 5000; // 5 seconds
         const CELEBRATION_DURATION = 5000; // 5 seconds
 
@@ -319,13 +319,13 @@
             try {
                 // Determine if we are in a testing environment without a real URL
                 let responseText = "";
-                if (CSV_URL.includes('https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv')) {
+                if (CSV_URL.includes('INSERT_YOUR')) {
                     // console.warn("URL de CSV no configurada. Usando datos de prueba si no hay datos.");
                     // For demonstration purposes, if the URL is not set, we might want to just show an error or mock data.
                     // However, the user asked for the code to include the comment where to put the URL.
                     // I will attempt to fetch, and if it fails (which it will), I'll handle the error.
                     // But to make the UI visible initially, I'll provide a check.
-
+                    
                     // If this is running in a dev environment/file system, fetch might fail on cross-origin or file protocol.
                     // We will proceed with fetch and catch errors.
                 }
@@ -333,7 +333,7 @@
                 const response = await fetch(CSV_URL);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 responseText = await response.text();
-
+                
                 const data = parseCSV(responseText);
                 updateDashboard(data);
                 errorDisplay.style.display = 'none';
@@ -341,7 +341,7 @@
             } catch (error) {
                 console.error("Error fetching data:", error);
                 // If it's the first load and we fail (likely due to placeholder URL), show empty state or mock for visual check
-                if (isFirstLoad && CSV_URL.includes('https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv')) {
+                if (isFirstLoad && CSV_URL.includes('INSERT_YOUR')) {
                     // Optional: Load mock data for visualization if the user hasn't set the URL yet
                     // mockData();
                     errorDisplay.textContent = "Configura la URL del CSV en el código.";
@@ -356,7 +356,7 @@
         function parseCSV(csvText) {
             const lines = csvText.trim().split(/\r\n|\n/);
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-
+            
             // Expected headers: id, agente, xfers (case insensitive)
             const idIndex = headers.indexOf('id');
             const agentIndex = headers.indexOf('agente');
@@ -530,7 +530,7 @@
 
         // --- START ---
         // For testing purposes, we can inject a mock function if the URL is invalid
-        if (CSV_URL.includes('https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv')) {
+        if (CSV_URL.includes('INSERT_YOUR')) {
            // Auto-inject mock data for preview if user just opens the file
            setTimeout(() => {
                if (document.querySelector('.loading')) {
@@ -563,7 +563,7 @@
 125,Veronica Cruz,0`;
                    const data = parseCSV(mockCSV);
                    updateDashboard(data);
-
+                   
                    // Simulate a sale after 3 seconds
                    setTimeout(() => {
                        console.log("Simulating Sale");
