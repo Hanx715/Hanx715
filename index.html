@@ -290,7 +290,7 @@
     <script>
         // --- CONFIGURATION ---
         // REPLACE THE URL BELOW WITH YOUR PUBLISHED GOOGLE SHEET CSV URL
-        const CSV_URL = 'INSERT_YOUR_GOOGLE_SHEET_CSV_URL_HERE';
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv_GOOGLE_SHEET_CSV_URL_HERE';
         const FETCH_INTERVAL = 5000; // 5 seconds
         const CELEBRATION_DURATION = 5000; // 5 seconds
 
@@ -319,7 +319,7 @@
             try {
                 // Determine if we are in a testing environment without a real URL
                 let responseText = "";
-                if (CSV_URL.includes('INSERT_YOUR')) {
+                if (CSV_URL.includes('https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv')) {
                     // console.warn("URL de CSV no configurada. Usando datos de prueba si no hay datos.");
                     // For demonstration purposes, if the URL is not set, we might want to just show an error or mock data.
                     // However, the user asked for the code to include the comment where to put the URL.
@@ -341,7 +341,7 @@
             } catch (error) {
                 console.error("Error fetching data:", error);
                 // If it's the first load and we fail (likely due to placeholder URL), show empty state or mock for visual check
-                if (isFirstLoad && CSV_URL.includes('INSERT_YOUR')) {
+                if (isFirstLoad && CSV_URL.includes('https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv')) {
                     // Optional: Load mock data for visualization if the user hasn't set the URL yet
                     // mockData();
                     errorDisplay.textContent = "Configura la URL del CSV en el código.";
@@ -530,7 +530,7 @@
 
         // --- START ---
         // For testing purposes, we can inject a mock function if the URL is invalid
-        if (CSV_URL.includes('INSERT_YOUR')) {
+        if (CSV_URL.includes('https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv')) {
            // Auto-inject mock data for preview if user just opens the file
            setTimeout(() => {
                if (document.querySelector('.loading')) {
