@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shoreline - 60 Agents</title>
+    <title>Shoreline Predator - Top 48 Slim</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
@@ -11,10 +11,10 @@
     <style>
         :root {
             --bg-color: #0a192f;
-            --accent-color: #64ffda;
-            --cp-color: #bd93f9; /* Color morado para CP . */
+            --accent-color: #64ffda; /* Verde Cian para Xfers */
+            --cp-color: #bd93f9;     /* Morado para CP */
             --text-color: #e6f1ff;
-            --glass-bg: rgba(17, 34, 64, 0.8);
+            --glass-bg: rgba(17, 34, 64, 0.9);
             --font-main: 'Montserrat', sans-serif;
         }
 
@@ -29,85 +29,138 @@
             flex-direction: column;
         }
 
-        /* HEADER COMPACTO */
+        /* HEADER */
         header {
-            height: 100px; /* Reducido para dar espacio a la tabla */
+            height: 85px; /* Altura fija */
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 30px;
-            background: rgba(10, 25, 47, 0.95);
-            border-bottom: 2px solid var(--accent-color);
+            padding: 0 40px;
+            background: rgba(10, 25, 47, 0.98);
+            border-bottom: 1px solid rgba(100, 255, 218, 0.2);
             z-index: 10;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
 
-        .logo-container img { height: 60px; filter: drop-shadow(0 0 5px var(--accent-color)); }
-        .dashboard-title { font-size: 1.8rem; font-weight: 800; letter-spacing: 3px; color: #fff; text-transform: uppercase;}
+        .logo-container { display: flex; align-items: center; gap: 15px; }
+        .logo-container img { height: 45px; filter: drop-shadow(0 0 5px var(--accent-color)); }
+        .dashboard-title { font-size: 1.6rem; font-weight: 800; letter-spacing: 4px; color: #fff; text-transform: uppercase;}
         
         .total-box { text-align: right; }
-        .total-label { font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; }
-        .total-value { font-size: 3rem; font-weight: 800; color: var(--accent-color); line-height: 1; }
+        .total-label { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.6; margin-bottom: 2px;}
+        .total-value { font-size: 2.8rem; font-weight: 800; color: var(--accent-color); line-height: 0.9; text-shadow: 0 0 15px rgba(100, 255, 218, 0.2);}
 
-        /* GRID DE 4 COLUMNAS */
+        /* GRID PRINCIPAL (4 COLUMNAS) */
         main {
             flex: 1;
-            padding: 15px; /* Padding reducido */
+            padding: 20px 25px; /* Más espacio alrededor */
             display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 4 Columnas iguales */
-            gap: 15px;
-            overflow: hidden;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px; /* Separación horizontal entre columnas */
+            align-content: start; /* Alineación superior */
         }
 
-        .column { display: flex; flex-direction: column; gap: 8px; }
+        .column { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; /* Espacio vertical entre tarjetas (hace que respire) */
+        }
 
-        /* TARJETA DE AGENTE COMPACTA */
+        /* TARJETAS DE AGENTE (SLIM DESIGN) */
         .agent-card {
             display: flex;
             align-items: center;
             justify-content: space-between;
             background: var(--glass-bg);
-            border-left: 3px solid rgba(100, 255, 218, 0.3);
-            border-radius: 6px;
-            padding: 8px 15px; /* Más compacto */
-            height: 5vh; /* Altura relativa para ajustar 15 */
+            border-left: 2px solid rgba(100, 255, 218, 0.1); /* Borde más sutil */
+            border-radius: 4px;
+            padding: 0 15px;
+            height: 5.8vh; /* Altura calculada para 12 filas + gaps */
+            /* Si quiere que sean aún más delgadas visualmente, podemos bajar esto, 
+               pero 5.8vh llena la pantalla perfectamente con 12 items */
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        .rank { font-size: 1.1rem; font-weight: 800; width: 35px; color: rgba(255,255,255,0.4); }
+        /* Posición (Rank) */
+        .rank { 
+            font-size: 1.1rem; 
+            font-weight: 800; 
+            width: 30px; 
+            color: rgba(255,255,255,0.15); 
+            text-align: left;
+        }
         
-        .agent-info { flex: 1; overflow: hidden; white-space: nowrap; }
-        .agent-name { font-size: 1rem; font-weight: 700; color: #fff; text-overflow: ellipsis; overflow: hidden; }
-        .agent-id { font-size: 0.7rem; color: #8892b0; }
-
-        .scores-container { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
-        .agent-score { font-size: 1.4rem; font-weight: 800; color: var(--accent-color); line-height: 1;}
+        /* Info Central (Nombre y CP) */
+        .agent-info { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center;
+            padding-left: 5px;
+            overflow: hidden; 
+        }
         
-        /* Estilo para el CP pequeño . */
-        .agent-cp { 
-            font-size: 0.7rem; 
-            color: var(--cp-color); 
+        .agent-name { 
+            font-size: 0.9rem; /* Letra un poco más pequeña para elegancia */
             font-weight: 600; 
-            margin-top: -2px;
+            color: #fff; 
+            white-space: nowrap; 
+            text-overflow: ellipsis; 
+            overflow: hidden; 
+            margin-bottom: 2px;
         }
-        .agent-cp::after { content: ' CP'; opacity: 0.7;}
-
-        /* TOP 3 HIGHLIGHTS */
-        .rank-1 { background: rgba(100, 255, 218, 0.15); border-left: 3px solid #ffd700; }
-        .rank-2 { background: rgba(100, 255, 218, 0.10); border-left: 3px solid #c0c0c0; }
-        .rank-3 { background: rgba(100, 255, 218, 0.05); border-left: 3px solid #cd7f32; }
-
-        .rank-1 .rank { color: #ffd700; }
         
+        .agent-cp-display { 
+            font-size: 0.7rem; 
+            color: var(--cp-color); /* Color Morado */
+            font-weight: 600; 
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* Puntuación Derecha (Solo Xfers) */
+        .scores-container { 
+            text-align: right; 
+            min-width: 40px;
+        }
+        .agent-score { 
+            font-size: 1.4rem; 
+            font-weight: 800; 
+            color: var(--accent-color); 
+            line-height: 1;
+        }
+        
+        /* Colores del Podio (Top 3) - Más sutiles */
+        .rank-1 { background: linear-gradient(90deg, rgba(255, 215, 0, 0.08), transparent); border-left: 2px solid #ffd700; }
+        .rank-2 { background: linear-gradient(90deg, rgba(192, 192, 192, 0.08), transparent); border-left: 2px solid #c0c0c0; }
+        .rank-3 { background: linear-gradient(90deg, rgba(205, 127, 50, 0.08), transparent); border-left: 2px solid #cd7f32; }
+        
+        .rank-1 .rank { color: #ffd700; }
+        .rank-2 .rank { color: #c0c0c0; }
+        .rank-3 .rank { color: #cd7f32; }
+
         /* OVERLAY DE CELEBRACIÓN */
         #celebration-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(10, 25, 47, 0.95);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             opacity: 0; pointer-events: none; transition: opacity 0.5s; z-index: 100;
+            backdrop-filter: blur(10px);
         }
         #celebration-overlay.active { opacity: 1; }
-        .celeb-title { font-size: 2rem; color: #fff; letter-spacing: 5px; margin-bottom: 20px;}
-        .celeb-name { font-size: 5rem; color: var(--accent-color); font-weight: 800; text-shadow: 0 0 30px var(--accent-color); margin-bottom: 10px; text-align: center;}
-        .celeb-type { font-size: 2.5rem; color: #fff; background: rgba(255,255,255,0.1); padding: 10px 30px; border-radius: 50px;}
+        
+        .celeb-title { font-size: 2rem; color: #fff; letter-spacing: 8px; margin-bottom: 20px; text-transform: uppercase;}
+        .celeb-name { font-size: 5rem; font-weight: 900; margin-bottom: 20px; text-align: center; line-height: 1.1;}
+        .celeb-detail { 
+            font-size: 3rem; 
+            font-weight: 700;
+            padding: 10px 40px; 
+            border: 2px solid;
+            border-radius: 50px;
+            background: rgba(0,0,0,0.3);
+            box-shadow: 0 0 20px inset;
+        }
 
     </style>
 </head>
@@ -119,7 +172,7 @@
             <span class="dashboard-title">SHORELINE</span>
         </div>
         <div class="total-box">
-            <div class="total-label">TOTAL XFERS</div>
+            <div class="total-label">TOTAL VENTAS</div>
             <div class="total-value" id="grand-total">0</div>
         </div>
     </header>
@@ -128,18 +181,18 @@
         </main>
 
     <div id="celebration-overlay">
-        <div class="celeb-title">¡MOVIMIENTO REGISTRADO!</div>
-        <div class="celeb-name" id="celeb-name">NOMBRE</div>
-        <div class="celeb-type" id="celeb-detail">+1 XFER</div>
+        <div class="celeb-title">¡MOVIMIENTO!</div>
+        <div class="celeb-name" id="celeb-name">AGENTE</div>
+        <div class="celeb-detail" id="celeb-detail">+1</div>
     </div>
 
     <script>
-        // CONFIGURACIÓN
-        // 1. REEMPLAZA ESTA URL CON TU NUEVO LINK CSV (El que tiene las columnas A-G)
+        // --- CONFIGURACIÓN ---
+        // PEGUE AQUÍ SU LINK DE GOOGLE SHEETS (CSV)
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv';
         
-        const FETCH_INTERVAL = 5000;
-        let previousData = {}; // Para guardar Xfers y CP anteriores
+        const FETCH_INTERVAL = 4000; // Actualizar cada 4 segundos
+        let previousData = {}; 
 
         async function init() {
             await fetchData();
@@ -153,27 +206,28 @@
                 const text = await response.text();
                 const agents = parseCSV(text);
                 updateDashboard(agents);
-            } catch (err) { console.error(err); }
+            } catch (err) { console.error("Esperando datos...", err); }
         }
 
         function parseCSV(csvText) {
             const lines = csvText.trim().split(/\r\n|\n/);
             const agents = [];
             
-            // Asumimos estructura nueva: 
-            // 0:ID, 1:Agente, 2:Xfers, 3:Check, 4:CP, 5:CheckCP, 6:Email
+            // Estructura esperada en CSV:
+            // Col 0: ID | Col 1: Agente | Col 2: Xfers | Col 3: Check | Col 4: CP
             
             for (let i = 1; i < lines.length; i++) {
                 const row = lines[i].split(',');
-                if (row.length < 5) continue; // Protección básica
+                if (row.length < 5) continue;
 
                 const id = row[0].trim();
                 const name = row[1].trim();
-                const xfers = parseInt(row[2]) || 0; // Columna C
-                const cp = parseInt(row[4]) || 0;    // Columna E (Indice 4)
+                const xfers = parseInt(row[2]) || 0; 
+                const cp = parseInt(row[4]) || 0;    
 
-                // Calcular Puntaje Maestro para ordenamiento (Xfers vale 1, CP vale 0.01)
-                const masterScore = xfers + (cp * 0.01);
+                // PUNTAJE MAESTRO PARA ORDENAR:
+                // Xfers pesan 1.0 | CP pesan 0.01 (Sirven para desempatar)
+                const masterScore = xfers + (cp * 0.001);
 
                 agents.push({ id, name, xfers, cp, masterScore });
             }
@@ -181,31 +235,37 @@
         }
 
         function updateDashboard(agents) {
-            // 1. ORDENAMIENTO (Desempate por CP)
+            // 1. Ordenar por Puntaje Maestro
             agents.sort((a, b) => b.masterScore - a.masterScore);
 
-            // 2. TOTAL GLOBAL
+            // 2. Calcular Total Global (Solo Xfers)
             const total = agents.reduce((sum, ag) => sum + ag.xfers, 0);
             document.getElementById('grand-total').innerText = total;
 
-            // 3. DETECTAR CAMBIOS (Para animación)
+            // 3. Detectar cambios para animación
             checkChanges(agents);
 
-            // 4. RENDER GRID (Top 60 - 4 Columnas x 15)
-            const top60 = agents.slice(0, 60);
+            // 4. Renderizar Grid (CAMBIO: Top 48)
+            const top48 = agents.slice(0, 48);
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
 
-            const cols = [document.createElement('div'), document.createElement('div'), document.createElement('div'), document.createElement('div')];
+            // Crear 4 Columnas
+            const cols = [
+                document.createElement('div'), 
+                document.createElement('div'), 
+                document.createElement('div'), 
+                document.createElement('div')
+            ];
             cols.forEach(c => { c.className = 'column'; grid.appendChild(c); });
 
-            top60.forEach((agent, i) => {
+            // Distribuir Agentes (12 por columna)
+            top48.forEach((agent, i) => {
                 const card = createCard(agent, i + 1);
                 
-                // Distribución 15 por columna
-                if (i < 15) cols[0].appendChild(card);
-                else if (i < 30) cols[1].appendChild(card);
-                else if (i < 45) cols[2].appendChild(card);
+                if (i < 12) cols[0].appendChild(card);
+                else if (i < 24) cols[1].appendChild(card);
+                else if (i < 36) cols[2].appendChild(card);
                 else cols[3].appendChild(card);
             });
         }
@@ -213,21 +273,22 @@
         function createCard(agent, rank) {
             const div = document.createElement('div');
             div.className = `agent-card rank-${rank}`;
+            
+            // CP EN LUGAR DE ID
             div.innerHTML = `
                 <div class="rank">#${rank}</div>
                 <div class="agent-info">
                     <div class="agent-name">${agent.name}</div>
-                    <div class="agent-id">ID: ${agent.id}</div>
+                    <div class="agent-cp-display">CP: ${agent.cp}</div>
                 </div>
                 <div class="scores-container">
                     <div class="agent-score">${agent.xfers}</div>
-                    ${agent.cp > 0 ? `<div class="agent-cp">${agent.cp}</div>` : ''}
                 </div>
             `;
             return div;
         }
 
-        // --- SISTEMA DE CELEBRACIÓN ---
+        // --- LÓGICA DE ANIMACIÓN Y CONFETI ---
         let celebQueue = [];
         let isCeleb = false;
 
@@ -235,13 +296,21 @@
             agents.forEach(ag => {
                 const prev = previousData[ag.id] || { xfers: 0, cp: 0 };
                 
-                // Detectar XFER
+                // Si subió XFER
                 if (ag.xfers > prev.xfers) {
-                    celebQueue.push({ name: ag.name, type: 'XFER', color: '#64ffda' });
+                    celebQueue.push({ 
+                        name: ag.name, 
+                        text: '+1 XFER', 
+                        mainColor: '#64ffda' // Verde Cian
+                    });
                 }
-                // Detectar CP (Opcional: Si quieres celebrar CPs también)
+                // Si subió CP
                 else if (ag.cp > prev.cp) {
-                    celebQueue.push({ name: ag.name, type: 'CP', color: '#bd93f9' });
+                    celebQueue.push({ 
+                        name: ag.name, 
+                        text: '+1 CP', 
+                        mainColor: '#bd93f9' // Morado CP
+                    });
                 }
 
                 previousData[ag.id] = { xfers: ag.xfers, cp: ag.cp };
@@ -251,28 +320,42 @@
         function processQueue() {
             setInterval(() => {
                 if (!isCeleb && celebQueue.length > 0) {
-                    showCeleb(celebQueue.shift());
+                    const event = celebQueue.shift();
+                    triggerCelebration(event);
                 }
             }, 500);
         }
 
-        function showCeleb(data) {
+        function triggerCelebration(event) {
             isCeleb = true;
-            const ov = document.getElementById('celebration-overlay');
-            document.getElementById('celeb-name').innerText = data.name;
-            
-            const detail = document.getElementById('celeb-detail');
-            detail.innerText = `+1 ${data.type}`;
-            detail.style.color = data.color;
-            detail.style.borderColor = data.color;
+            const overlay = document.getElementById('celebration-overlay');
+            const nameEl = document.getElementById('celeb-name');
+            const detailEl = document.getElementById('celeb-detail');
 
-            ov.classList.add('active');
+            // Configurar textos y colores
+            nameEl.innerText = event.name;
+            nameEl.style.color = event.mainColor;
+            nameEl.style.textShadow = `0 0 30px ${event.mainColor}`;
             
-            // Confeti del color correspondiente
-            confetti({ particleCount: 150, spread: 70, colors: [data.color, '#ffffff'] });
+            detailEl.innerText = event.text;
+            detailEl.style.color = event.mainColor;
+            detailEl.style.borderColor = event.mainColor;
+            detailEl.style.boxShadow = `0 0 20px ${event.mainColor} inset`;
 
+            // Mostrar
+            overlay.classList.add('active');
+            
+            // Disparar Confeti del color del evento
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: [event.mainColor, '#ffffff']
+            });
+
+            // Ocultar después de 4 segundos
             setTimeout(() => {
-                ov.classList.remove('active');
+                overlay.classList.remove('active');
                 isCeleb = false;
             }, 4000);
         }
