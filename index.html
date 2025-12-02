@@ -46,44 +46,55 @@
         .total-label { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.6; margin-bottom: 2px;}
         .total-value { font-size: 2.8rem; font-weight: 800; color: var(--accent-color); line-height: 0.9; text-shadow: 0 0 15px rgba(100, 255, 218, 0.2);}
 
-   /* GRID */
+/* GRID */
         main {
-            flex: 1; padding: 15px 20px; /* Padding reducido para ganar altura */
+            flex: 1; padding: 15px 20px;
             display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 12px; align-content: start; /* Gap reducido */
-            overflow: hidden; /* Evita barras de desplazamiento */
+            gap: 10px; /* Reduje un poco el gap lateral para compensar */
+            align-content: start;
+            overflow: hidden;
         }
 
-        .column { display: flex; flex-direction: column; gap: 0.6vh; } /* Gap dinámico vertical */
+        /* Gap vertical dinámico ajustado */
+        .column { display: flex; flex-direction: column; gap: 0.5vh; } 
 
-        /* CARDS SLIM - Altura ajustada para 16 filas */
+        /* CARDS SLIM - Altura Aumentada */
         .agent-card {
             display: flex; align-items: center; justify-content: space-between;
             background: var(--glass-bg);
             border-left: 2px solid rgba(100, 255, 218, 0.1);
             border-radius: 4px; padding: 0 12px;
             
-            /* CLAVE: 4.2vh permite que quepan 16 tarjetas verticalmente */
-            height: 4.2vh; 
+            /* CAMBIO: Un poco más altas (de 4.2vh a 4.6vh) */
+            height: 4.6vh; 
             
             transition: all 0.3s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        .rank { font-size: 1.1rem; font-weight: 800; width: 25px; color: rgba(255,255,255,0.15); text-align: left; }
+        /* RANGO - Espacio Ampliado */
+        .rank { 
+            font-size: 1.1rem; 
+            font-weight: 800; 
+            
+            /* CAMBIO CRÍTICO: De 25px a 45px para empujar el texto a la derecha */
+            width: 45px; 
+            
+            color: rgba(255,255,255,0.15); 
+            text-align: left; 
+        }
         
         .agent-info { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-left: 5px; overflow: hidden; }
         
         .agent-name { 
-            font-size: 0.85rem; /* Ajuste ligero para compensar altura */
+            font-size: 0.85rem; 
             font-weight: 600; color: #fff; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; margin-bottom: 1px; 
         }
         
-        /* CP AUMENTADO */
         .agent-cp-display { 
-            font-size: 0.95rem; /* Más grande */
+            font-size: 0.95rem; 
             color: var(--cp-color); 
-            font-weight: 800; /* Más grueso */
+            font-weight: 800; 
             letter-spacing: 0.5px; text-transform: uppercase; 
         }
         
