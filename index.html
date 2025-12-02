@@ -49,41 +49,47 @@
 /* GRID */
         main {
             flex: 1; 
-            padding: 10px 2px; /* Un poco menos padding arriba/abajo */
+            /* Padding lateral mínimo (2px) para ganar espacio horizontal */
+            padding: 15px 2px;
             display: grid; 
+            /* minmax(0, 1fr) fuerza a que las columnas no se desborden */
             grid-template-columns: repeat(4, minmax(0, 1fr));
+            /* Espacio entre columnas cerrado */
             gap: 4px; 
             align-content: start;
             overflow: hidden;
         }
 
-        .column { display: flex; flex-direction: column; gap: 4px; } /* Gap reducido para apretar filas */
         .column { display: flex; flex-direction: column; gap: 6px; } 
 
-/* CARDS (ALTURA PARA 15 FILAS) */
+        /* CARDS - Combinación: Angostas pero Altas */
         .agent-card {
             display: flex; align-items: center; justify-content: space-between;
             background: var(--glass-bg);
             border-left: 2px solid rgba(100, 255, 218, 0.1);
             border-radius: 4px; 
+            
+            /* Padding interno ajustado para ahorrar espacio */
             padding: 0 5px;
             
-            /* CAMBIO CRÍTICO: De 6.5vh bajamos a 5.0vh para que quepan 15 */
-            height: 5.0vh; 
+            /* ALTURA AUMENTADA: Para que las 12 filas llenen la pantalla */
+            height: 6.5vh; 
             
             transition: all 0.3s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        /* RANGO */
+        /* RANGO - Muy compacto */
         .rank { 
-            font-size: 1.0rem; /* Ajuste leve */
+            font-size: 1.1rem; 
             font-weight: 800; 
+            
+            /* Ancho reducido a 25px para que entren las 4 columnas */
             width: 25px; 
+            
             color: rgba(255,255,255,0.15); 
             text-align: center; 
         }
-        
         
         .agent-info { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-left: 5px; overflow: hidden; }
         
@@ -189,31 +195,29 @@
             return agents;
         }
 
-     function updateDashboard(agents) {
+      function updateDashboard(agents) {
+            // 1. Ordenar por puntuación maestra (Xfer primero, CP decimal)
             agents.sort((a, b) => b.masterScore - a.masterScore);
+            
+            // 2. Calcular Gran Total
             const total = agents.reduce((sum, ag) => sum + ag.xfers, 0);
             document.getElementById('grand-total').innerText = total;
 
+            // 3. Revisar cambios para animaciones
             checkChanges(agents);
 
-            // CAMBIO: AHORA CORTAMOS EN 60 (Top 60)
-            const topAgents = agents.slice(0, 60);
-            
+            // 4. GRID TOP 64 (Ahora configurado para 4 columnas x 16 filas)
+            const top64 = agents.slice(0, 64);
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
-            const cols = [document.createElement('div'), document.createElement('div'), document.createElement('div'), document.createElement('div')];
-            cols.forEach(c => { c.className = 'column'; grid.appendChild(c); });
-
-            topAgents.forEach((agent, i) => {
-                const card = createCard(agent, i + 1);
-                
-                // DISTRIBUCIÓN 15 POR COLUMNA
-                if (i < 15) cols[0].appendChild(card);
-                else if (i < 30) cols[1].appendChild(card);
-                else if (i < 45) cols[2].appendChild(card);
-                else cols[3].appendChild(card);
-            });
-        }
+            
+            // Creamos las 4 columnas contenedoras
+            const cols = [
+                document.createElement('div'), 
+                document.createElement('div'), 
+                document.createElement('div'), 
+                document.createElement('div')
+            ];
             
             cols.forEach(c => { c.className = 'column'; grid.appendChild(c); });
 
