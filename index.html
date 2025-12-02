@@ -46,29 +46,47 @@
         .total-label { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.6; margin-bottom: 2px;}
         .total-value { font-size: 2.8rem; font-weight: 800; color: var(--accent-color); line-height: 0.9; text-shadow: 0 0 15px rgba(100, 255, 218, 0.2);}
 
-        /* GRID */
+   /* GRID */
         main {
-            flex: 1; padding: 20px 25px;
+            flex: 1; padding: 15px 20px; /* Padding reducido para ganar altura */
             display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 20px; align-content: start;
+            gap: 12px; align-content: start; /* Gap reducido */
+            overflow: hidden; /* Evita barras de desplazamiento */
         }
 
-        .column { display: flex; flex-direction: column; gap: 10px; }
+        .column { display: flex; flex-direction: column; gap: 0.6vh; } /* Gap dinámico vertical */
 
-        /* CARDS SLIM */
+        /* CARDS SLIM - Altura ajustada para 16 filas */
         .agent-card {
             display: flex; align-items: center; justify-content: space-between;
             background: var(--glass-bg);
             border-left: 2px solid rgba(100, 255, 218, 0.1);
-            border-radius: 4px; padding: 0 15px;
-            height: 5.8vh; transition: all 0.3s ease;
+            border-radius: 4px; padding: 0 12px;
+            
+            /* CLAVE: 4.2vh permite que quepan 16 tarjetas verticalmente */
+            height: 4.2vh; 
+            
+            transition: all 0.3s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        .rank { font-size: 1.1rem; font-weight: 800; width: 30px; color: rgba(255,255,255,0.15); text-align: left; }
+        .rank { font-size: 1.1rem; font-weight: 800; width: 25px; color: rgba(255,255,255,0.15); text-align: left; }
+        
         .agent-info { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-left: 5px; overflow: hidden; }
-        .agent-name { font-size: 0.9rem; font-weight: 600; color: #fff; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; margin-bottom: 2px; }
-        .agent-cp-display { font-size: 0.7rem; color: var(--cp-color); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+        
+        .agent-name { 
+            font-size: 0.85rem; /* Ajuste ligero para compensar altura */
+            font-weight: 600; color: #fff; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; margin-bottom: 1px; 
+        }
+        
+        /* CP AUMENTADO */
+        .agent-cp-display { 
+            font-size: 0.95rem; /* Más grande */
+            color: var(--cp-color); 
+            font-weight: 800; /* Más grueso */
+            letter-spacing: 0.5px; text-transform: uppercase; 
+        }
+        
         .scores-container { text-align: right; min-width: 40px; }
         .agent-score { font-size: 1.4rem; font-weight: 800; color: var(--accent-color); line-height: 1; }
         
