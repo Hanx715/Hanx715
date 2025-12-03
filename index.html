@@ -159,7 +159,7 @@
         
         const FETCH_INTERVAL = 3000; 
         let previousData = {}; 
-        let isFirstRun = true; // BANDERA DE SEGURIDAD 1
+        let isFirstRun = true; 
 
         async function init() {
             await fetchData();
@@ -169,14 +169,13 @@
 
         async function fetchData() {
             try {
-                // SEGURIDAD 2: Anti-Caché (Date.now() obliga a descargar datos frescos siempre)
+                // Anti-Caché: Forzamos datos frescos
                 const urlConCacheBuster = CSV_URL + '&t=' + Date.now();
-                
                 const response = await fetch(urlConCacheBuster);
                 const text = await response.text();
                 const agents = parseCSV(text);
                 updateDashboard(agents);
-            } catch (err) { console.error("Conexión inestable...", err); }
+            } catch (err) { console.error("...", err); }
         }
 
         function parseCSV(csvText) {
@@ -198,21 +197,16 @@
         }
 
         function updateDashboard(agents) {
-            // Ordenar
             agents.sort((a, b) => b.masterScore - a.masterScore);
-            
-            // Total Global
             const total = agents.reduce((sum, ag) => sum + ag.xfers, 0);
             document.getElementById('grand-total').innerText = total;
 
-            // Detectar Cambios
             checkChanges(agents);
 
-            // Renderizar Grid (Top 52 - 13 filas x 4 columnas)
+            // GRID TOP 52
             const top52 = agents.slice(0, 52);
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
-            
             const cols = [
                 document.createElement('div'), document.createElement('div'), 
                 document.createElement('div'), document.createElement('div')
@@ -244,25 +238,26 @@
             return div;
         }
 
-        // --- LÓGICA DE DETECCIÓN DE CAMBIOS CORREGIDA ---
+        // --- SOLUCIÓN AL PROBLEMA DE REBOTE ---
         let celebQueue = [];
         let isCeleb = false;
 
         function checkChanges(agents) {
-            // SI ES LA PRIMERA CARGA: Solo memorizamos, NO celebramos.
             if (isFirstRun) {
                 agents.forEach(ag => {
                     previousData[ag.id] = { xfers: ag.xfers, cp: ag.cp };
                 });
-                isFirstRun = false; // Bajamos la bandera
-                return; // Salimos de la función sin agregar nada a la cola
+                isFirstRun = false;
+                return;
             }
 
             agents.forEach(ag => {
-                // Si es un agente nuevo que no estaba en memoria, lo inicializamos en 0
-                const prev = previousData[ag.id] || { xfers: 0, cp: 0 };
+                // Recuperar memoria o iniciar en 0
+                if (!previousData[ag.id]) previousData[ag.id] = { xfers: 0, cp: 0 };
                 
-                // Solo celebramos si el valor NUEVO es MAYOR al anterior
+                const prev = previousData[ag.id];
+                
+                // 1. DETECTAR CELEBRACIÓN (Solo si sube)
                 if (ag.xfers > prev.xfers) {
                     celebQueue.push({ name: ag.name, text: '+1 XFER', mainColor: '#64ffda' });
                 }
@@ -270,8 +265,17 @@
                     celebQueue.push({ name: ag.name, text: '+1 CP', mainColor: '#bd93f9' });
                 }
                 
-                // Actualizamos la memoria
-                previousData[ag.id] = { xfers: ag.xfers, cp: ag.cp };
+                // 2. ACTUALIZAR MEMORIA (CANDADO ANTI-REBOTE)
+                // Solo actualizamos la memoria si el nuevo número es MAYOR o IGUAL.
+                // Si el servidor envía un número menor (glitch), lo ignoramos en la memoria
+                // para evitar que se dispare la celebración cuando se corrija.
+                
+                if (ag.xfers >= prev.xfers) {
+                    previousData[ag.id].xfers = ag.xfers;
+                }
+                if (ag.cp >= prev.cp) {
+                    previousData[ag.id].cp = ag.cp;
+                }
             });
         }
 
@@ -321,6 +325,7 @@
 
         init();
     </script>
+    
     
 </body>
 </html>
