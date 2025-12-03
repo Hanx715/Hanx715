@@ -158,8 +158,15 @@
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv';
         
         const FETCH_INTERVAL = 3000; 
-        let previousData = {}; 
-        let isFirstRun = true; // BANDERA DE SEGURIDAD 1
+        
+        // Memoria del sistema
+        let memory = {}; 
+        let isFirstRun = true; 
+        let celebQueue = [];
+        let isCeleb = false;
+        
+        // Cuantas veces debe repetirse un dato bajo para aceptarlo como corrección (aprox 9 segs)
+        const PERSISTENCE_THRESHOLD = 3; 
 
         async function init() {
             await fetchData();
@@ -169,46 +176,100 @@
 
         async function fetchData() {
             try {
-                // SEGURIDAD 2: Anti-Caché (Date.now() obliga a descargar datos frescos siempre)
-                const urlConCacheBuster = CSV_URL + '&t=' + Date.now();
-                
-                const response = await fetch(urlConCacheBuster);
+                const url = CSV_URL + '&t=' + Date.now();
+                const response = await fetch(url);
                 const text = await response.text();
-                const agents = parseCSV(text);
+                
+                // Procesamos y Estabilizamos los datos antes de pintar
+                const agents = processData(text); 
                 updateDashboard(agents);
-            } catch (err) { console.error("Conexión inestable...", err); }
+            } catch (err) { console.error("...", err); }
         }
 
-        function parseCSV(csvText) {
+        // Esta función hace TODO: Parsear, Estabilizar y Encolar Animaciones
+        function processData(csvText) {
             const lines = csvText.trim().split(/\r\n|\n/);
             const agents = [];
+
             for (let i = 1; i < lines.length; i++) {
                 const row = lines[i].split(',');
                 if (row.length < 5) continue;
 
                 const id = row[0].trim();
                 const name = row[1].trim();
-                const xfers = parseInt(row[2]) || 0; 
-                const cp = parseInt(row[4]) || 0;    
-                const masterScore = xfers + (cp * 0.001);
+                // Leemos los datos crudos que llegan de Google
+                let rawXfers = parseInt(row[2]) || 0; 
+                let rawCp = parseInt(row[4]) || 0;    
 
-                agents.push({ id, name, xfers, cp, masterScore });
+                // --- LÓGICA DE ESTABILIZACIÓN ---
+                if (!memory[id]) {
+                    // Si es nuevo, lo guardamos en memoria
+                    memory[id] = { xfers: rawXfers, cp: rawCp, glitchCount: 0 };
+                } 
+                
+                const mem = memory[id];
+
+                // 1. MANEJO INTELIGENTE DE XFERS
+                if (rawXfers < mem.xfers) {
+                    // --> EL NÚMERO BAJÓ
+                    if (rawXfers === 0) {
+                        // CASO A: Reinicio de día (Aceptar inmediato)
+                        mem.xfers = 0; 
+                        mem.glitchCount = 0;
+                    } else {
+                        // CASO B: Posible error de servidor o corrección manual
+                        mem.glitchCount++;
+                        if (mem.glitchCount >= PERSISTENCE_THRESHOLD) {
+                            // Persistió el dato bajo: Es corrección real -> Aceptar
+                            mem.xfers = rawXfers;
+                            mem.glitchCount = 0;
+                        } else {
+                            // Es un parpadeo fugaz: IGNORAR y usar memoria (dato alto)
+                            // Esto evita que la barra baje y vuelva a subir
+                            rawXfers = mem.xfers; 
+                        }
+                    }
+                } else if (rawXfers > mem.xfers) {
+                    // --> EL NÚMERO SUBIÓ (Venta real)
+                    if (!isFirstRun) {
+                        celebQueue.push({ name: name, text: '+1 XFER', mainColor: '#64ffda' });
+                    }
+                    mem.xfers = rawXfers;
+                    mem.glitchCount = 0; // Resetear contador de errores
+                } else {
+                    // --> EL NÚMERO ES IGUAL
+                    mem.glitchCount = 0; // Si volvió al dato alto, era un glitch, reseteamos sospecha
+                }
+
+                // 2. MANEJO DE CP (Simplificado)
+                if (rawCp > mem.cp) {
+                    if (!isFirstRun) {
+                        celebQueue.push({ name: name, text: '+1 CP', mainColor: '#bd93f9' });
+                    }
+                    mem.cp = rawCp;
+                } else if (rawCp < mem.cp) {
+                     if (rawCp === 0) mem.cp = 0; // Reinicio
+                     else rawCp = mem.cp; // Ignorar bajadas leves para estabilidad
+                }
+
+                // Usamos los datos ESTABILIZADOS (mem.xfers/mem.cp o rawXfers corregido) para el ranking
+                const finalXfers = mem.xfers; 
+                const finalCp = mem.cp;
+                
+                // Calcular Puntaje
+                const masterScore = finalXfers + (finalCp * 0.001);
+                agents.push({ id, name, xfers: finalXfers, cp: finalCp, masterScore });
             }
+            
+            if (isFirstRun) isFirstRun = false;
             return agents;
         }
 
         function updateDashboard(agents) {
-            // Ordenar
             agents.sort((a, b) => b.masterScore - a.masterScore);
-            
-            // Total Global
             const total = agents.reduce((sum, ag) => sum + ag.xfers, 0);
             document.getElementById('grand-total').innerText = total;
 
-            // Detectar Cambios
-            checkChanges(agents);
-
-            // Renderizar Grid (Top 52 - 13 filas x 4 columnas)
             const top52 = agents.slice(0, 52);
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
@@ -242,37 +303,6 @@
                 </div>
             `;
             return div;
-        }
-
-        // --- LÓGICA DE DETECCIÓN DE CAMBIOS CORREGIDA ---
-        let celebQueue = [];
-        let isCeleb = false;
-
-        function checkChanges(agents) {
-            // SI ES LA PRIMERA CARGA: Solo memorizamos, NO celebramos.
-            if (isFirstRun) {
-                agents.forEach(ag => {
-                    previousData[ag.id] = { xfers: ag.xfers, cp: ag.cp };
-                });
-                isFirstRun = false; // Bajamos la bandera
-                return; // Salimos de la función sin agregar nada a la cola
-            }
-
-            agents.forEach(ag => {
-                // Si es un agente nuevo que no estaba en memoria, lo inicializamos en 0
-                const prev = previousData[ag.id] || { xfers: 0, cp: 0 };
-                
-                // Solo celebramos si el valor NUEVO es MAYOR al anterior
-                if (ag.xfers > prev.xfers) {
-                    celebQueue.push({ name: ag.name, text: '+1 XFER', mainColor: '#64ffda' });
-                }
-                else if (ag.cp > prev.cp) {
-                    celebQueue.push({ name: ag.name, text: '+1 CP', mainColor: '#bd93f9' });
-                }
-                
-                // Actualizamos la memoria
-                previousData[ag.id] = { xfers: ag.xfers, cp: ag.cp };
-            });
         }
 
         function processQueue() {
@@ -321,6 +351,7 @@
 
         init();
     </script>
+    
     
 </body>
 </html>
