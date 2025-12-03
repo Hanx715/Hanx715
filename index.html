@@ -153,12 +153,13 @@
         <div class="celeb-detail" id="celeb-detail">+1</div>
     </div>
 
-    <script>
+<script>
         // --- URL CSV ---
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv';
         
         const FETCH_INTERVAL = 3000; 
         let previousData = {}; 
+        let isFirstRun = true; // BANDERA DE SEGURIDAD 1
 
         async function init() {
             await fetchData();
@@ -168,11 +169,14 @@
 
         async function fetchData() {
             try {
-                const response = await fetch(CSV_URL);
+                // SEGURIDAD 2: Anti-Caché (Date.now() obliga a descargar datos frescos siempre)
+                const urlConCacheBuster = CSV_URL + '&t=' + Date.now();
+                
+                const response = await fetch(urlConCacheBuster);
                 const text = await response.text();
                 const agents = parseCSV(text);
                 updateDashboard(agents);
-            } catch (err) { console.error("...", err); }
+            } catch (err) { console.error("Conexión inestable...", err); }
         }
 
         function parseCSV(csvText) {
@@ -193,44 +197,37 @@
             return agents;
         }
 
-     function updateDashboard(agents) {
-            // ... (código anterior de ordenamiento y total) ...
+        function updateDashboard(agents) {
+            // Ordenar
             agents.sort((a, b) => b.masterScore - a.masterScore);
+            
+            // Total Global
             const total = agents.reduce((sum, ag) => sum + ag.xfers, 0);
             document.getElementById('grand-total').innerText = total;
 
+            // Detectar Cambios
             checkChanges(agents);
 
-            // CAMBIO 1: CORTAR EN TOP 52
+            // Renderizar Grid (Top 52 - 13 filas x 4 columnas)
             const top52 = agents.slice(0, 52);
-            
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
             
             const cols = [
-                document.createElement('div'), 
-                document.createElement('div'), 
-                document.createElement('div'), 
-                document.createElement('div')
+                document.createElement('div'), document.createElement('div'), 
+                document.createElement('div'), document.createElement('div')
             ];
             cols.forEach(c => { c.className = 'column'; grid.appendChild(c); });
 
             top52.forEach((agent, i) => {
                 const card = createCard(agent, i + 1);
-                
-                // CAMBIO 2: DISTRIBUCIÓN DE 13 EN 13
-                if (i < 13) {
-                    cols[0].appendChild(card);       // 1-13
-                } else if (i < 26) {
-                    cols[1].appendChild(card);       // 14-26
-                } else if (i < 39) {
-                    cols[2].appendChild(card);       // 27-39
-                } else {
-                    cols[3].appendChild(card);       // 40-52
-                }
+                if (i < 13) cols[0].appendChild(card);
+                else if (i < 26) cols[1].appendChild(card);
+                else if (i < 39) cols[2].appendChild(card);
+                else cols[3].appendChild(card);
             });
         }
-        
+
         function createCard(agent, rank) {
             const div = document.createElement('div');
             div.className = `agent-card rank-${rank}`;
@@ -247,39 +244,43 @@
             return div;
         }
 
-        // --- SISTEMA INTELIGENTE DE VELOCIDAD ---
+        // --- LÓGICA DE DETECCIÓN DE CAMBIOS CORREGIDA ---
         let celebQueue = [];
         let isCeleb = false;
 
         function checkChanges(agents) {
+            // SI ES LA PRIMERA CARGA: Solo memorizamos, NO celebramos.
+            if (isFirstRun) {
+                agents.forEach(ag => {
+                    previousData[ag.id] = { xfers: ag.xfers, cp: ag.cp };
+                });
+                isFirstRun = false; // Bajamos la bandera
+                return; // Salimos de la función sin agregar nada a la cola
+            }
+
             agents.forEach(ag => {
+                // Si es un agente nuevo que no estaba en memoria, lo inicializamos en 0
                 const prev = previousData[ag.id] || { xfers: 0, cp: 0 };
-                // Ignorar la primera carga masiva (si todos son 0 antes)
-                // Opcional: Si quieres que suenen al inicio, quita la validación de previousData vacío
                 
+                // Solo celebramos si el valor NUEVO es MAYOR al anterior
                 if (ag.xfers > prev.xfers) {
                     celebQueue.push({ name: ag.name, text: '+1 XFER', mainColor: '#64ffda' });
                 }
                 else if (ag.cp > prev.cp) {
                     celebQueue.push({ name: ag.name, text: '+1 CP', mainColor: '#bd93f9' });
                 }
+                
+                // Actualizamos la memoria
                 previousData[ag.id] = { xfers: ag.xfers, cp: ag.cp };
             });
         }
 
         function processQueue() {
-            // Revisamos la cola cada 100ms
             setInterval(() => {
                 if (!isCeleb && celebQueue.length > 0) {
-                    
-                    // --- AQUÍ ESTÁ LA MAGIA DE VELOCIDAD ---
-                    let duration = 3000; // Normal (3 segundos)
-                    
-                    if (celebQueue.length > 5) {
-                        duration = 500; // Modo Flash (0.5 seg) si hay mucha fila
-                    } else if (celebQueue.length > 2) {
-                        duration = 1500; // Modo Rápido (1.5 seg)
-                    }
+                    let duration = 3000; 
+                    if (celebQueue.length > 5) duration = 500; 
+                    else if (celebQueue.length > 2) duration = 1500; 
 
                     const event = celebQueue.shift();
                     triggerCelebration(event, duration);
@@ -296,7 +297,6 @@
             nameEl.innerText = event.name;
             nameEl.style.color = event.mainColor;
             nameEl.style.textShadow = `0 0 30px ${event.mainColor}`;
-            
             detailEl.innerText = event.text;
             detailEl.style.color = event.mainColor;
             detailEl.style.borderColor = event.mainColor;
@@ -304,9 +304,7 @@
 
             overlay.classList.add('active');
             
-            // Confeti más rápido si el modo es rápido
             const particleCount = duration < 1000 ? 50 : 150; 
-
             confetti({
                 particleCount: particleCount,
                 spread: 70,
@@ -317,12 +315,12 @@
 
             setTimeout(() => {
                 overlay.classList.remove('active');
-                // Pequeño descanso antes del siguiente (100ms)
                 setTimeout(() => { isCeleb = false; }, 100);
             }, duration);
         }
 
         init();
     </script>
+    
 </body>
 </html>
