@@ -3,398 +3,345 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEON VERTEX - Shoreline Edition</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Shoreline Predator - Final Stable</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg-core: #050505;
-            --bg-panel: #111111;
-            --border-color: #333333;
-            --neon-pink: #ff00ff;
-            --neon-cyan: #00ffff;
-            --neon-violet: #bc13fe;
-            --neon-green: #0aff0a;
-            --text-main: #ffffff;
-            --text-muted: #888888;
-            --font-tech: 'Rajdhani', sans-serif;
+            --bg-color: #0a192f;
+            --accent-color: #64ffda;
+            --cp-color: #bd93f9;
+            --text-color: #e6f1ff;
+            --glass-bg: rgba(17, 34, 64, 0.9);
+            --font-main: 'Montserrat', sans-serif;
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background-color: var(--bg-core);
-            color: var(--text-main);
-            font-family: var(--font-tech);
-            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            margin: 0;
             overflow: hidden;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            background-image: linear-gradient(rgba(5, 5, 5, 0.95), rgba(5, 5, 5, 0.95)),
-                repeating-linear-gradient(0deg, transparent, transparent 1px, #111 1px, #111 2px);
-            background-size: 100% 4px;
         }
 
-        /* --- HEADER --- */
+        /* HEADER */
         header {
-            height: 100px;
+            height: 85px;
             display: flex; justify-content: space-between; align-items: center;
-            padding: 0 40px; border-bottom: 2px solid var(--border-color);
-            background: rgba(17, 17, 17, 0.8); backdrop-filter: blur(5px);
-            position: relative; z-index: 10;
-        }
-        header::after {
-            content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px;
-            background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
-            box-shadow: 0 0 10px var(--neon-pink);
+            padding: 0 40px; background: rgba(10, 25, 47, 0.98);
+            border-bottom: 1px solid rgba(100, 255, 218, 0.2); z-index: 10;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
 
-        .brand { display: flex; align-items: center; gap: 20px; }
-        .brand img { height: 50px; filter: drop-shadow(0 0 5px var(--neon-cyan)); }
-        .brand-text {
-            font-size: 2rem; font-weight: 700; letter-spacing: 4px; text-transform: uppercase;
-            background: linear-gradient(to right, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
+        .logo-container { display: flex; align-items: center; gap: 15px; }
+        .logo-container img { height: 45px; filter: drop-shadow(0 0 5px var(--accent-color)); }
+        .dashboard-title { font-size: 1.6rem; font-weight: 800; letter-spacing: 4px; color: #fff; text-transform: uppercase;}
+        
+        .total-box { text-align: right; }
+        .total-label { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.6; margin-bottom: 2px;}
+        .total-value { font-size: 2.8rem; font-weight: 800; color: var(--accent-color); line-height: 0.9; text-shadow: 0 0 15px rgba(100, 255, 218, 0.2);}
 
-        .total-display { text-align: right; }
-        .total-label { font-size: 0.9rem; color: var(--neon-cyan); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2px; }
-        .total-value { font-size: 3.5rem; font-weight: 700; color: #fff; text-shadow: 0 0 20px var(--neon-pink); line-height: 0.9; }
-
-        /* --- MAIN LAYOUT --- */
+        /* GRID */
         main {
-            flex: 1; padding: 20px 40px;
-            display: flex; flex-direction: column; gap: 20px; overflow: hidden;
+            flex: 1; 
+            padding: 15px 2px;
+            display: grid; 
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 4px; 
+            align-content: start;
+            overflow: hidden;
         }
 
-        /* PODIUM (Top 3) */
-        .podium-section {
-            display: flex; justify-content: center; align-items: flex-end;
-            gap: 20px; height: 35%;
+        .column { display: flex; flex-direction: column; gap: 6px; } 
+
+        /* CARDS */
+        .agent-card {
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--glass-bg);
+            border-left: 2px solid rgba(100, 255, 218, 0.1);
+            border-radius: 4px; 
+            padding: 0 8px;
+            height: 5.0vh; /* Altura ajustada para 15 filas */
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        .podium-card {
-            background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 4px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            position: relative; transition: all 0.5s ease; width: 25%;
+        /* RANGO */
+        .rank { 
+            font-size: 1.1rem; 
+            font-weight: 800; 
+            width: 35px; 
+            color: rgba(255,255,255,0.15); 
+            text-align: left; 
         }
-
-        .podium-card.rank-1 { height: 100%; border-color: var(--neon-pink); box-shadow: 0 0 20px rgba(255, 0, 255, 0.2); z-index: 2; }
-        .podium-card.rank-2 { height: 85%; border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 255, 255, 0.15); }
-        .podium-card.rank-3 { height: 75%; border-color: var(--neon-violet); box-shadow: 0 0 15px rgba(188, 19, 254, 0.15); }
-
-        .podium-rank {
-            position: absolute; top: -15px; background: #000; padding: 2px 10px;
-            border: 1px solid currentColor; font-size: 1.2rem; font-weight: 700;
-            box-shadow: 0 0 10px currentColor;
-        }
-        .rank-1 .podium-rank { color: var(--neon-pink); }
-        .rank-2 .podium-rank { color: var(--neon-cyan); }
-        .rank-3 .podium-rank { color: var(--neon-violet); }
-
-        .podium-name { font-size: 1.5rem; font-weight: 600; text-align: center; width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
-        .podium-score { font-size: 3rem; font-weight: 700; color: #fff; line-height: 1; }
-        .podium-cp { font-size: 0.9rem; color: var(--text-muted); margin-top: 2px; }
-
-        /* LIST GRID (Rank 4+) */
-        .list-section {
-            flex: 1; display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            gap: 10px; align-content: start;
-        }
-
-        .list-card {
-            background: rgba(255, 255, 255, 0.03); border-left: 3px solid var(--border-color);
-            display: flex; align-items: center; padding: 0 10px; gap: 10px; height: 5.5vh;
-            transition: background 0.3s;
-        }
-        .list-card:hover { background: rgba(255, 255, 255, 0.08); }
-
-        .list-rank { font-size: 1rem; font-weight: 700; color: var(--text-muted); width: 25px; text-align: center; }
-        .list-info { flex: 1; overflow: hidden; }
-        .list-name { font-size: 0.95rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .list-cp { font-size: 0.75rem; color: var(--neon-violet); font-weight: 700; }
-        .list-score { font-size: 1.3rem; font-weight: 700; color: var(--neon-green); text-shadow: 0 0 5px rgba(10, 255, 10, 0.3); }
+        
+        .agent-info { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-left: 5px; overflow: hidden; }
+        .agent-name { font-size: 0.75rem; font-weight: 600; color: #fff; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; margin-bottom: 1px; }
+        .agent-cp-display { font-size: 0.95rem; color: var(--cp-color); font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
+        .scores-container { text-align: right; min-width: 30px; }
+        .agent-score { font-size: 1.4rem; font-weight: 800; color: var(--accent-color); line-height: 1; }
+        
+        /* TOP 3 */
+        .rank-1 { background: linear-gradient(90deg, rgba(255, 215, 0, 0.08), transparent); border-left: 2px solid #ffd700; }
+        .rank-2 { background: linear-gradient(90deg, rgba(192, 192, 192, 0.08), transparent); border-left: 2px solid #c0c0c0; }
+        .rank-3 { background: linear-gradient(90deg, rgba(205, 127, 50, 0.08), transparent); border-left: 2px solid #cd7f32; }
+        .rank-1 .rank { color: #ffd700; } .rank-2 .rank { color: #c0c0c0; } .rank-3 .rank { color: #cd7f32; }
 
         /* OVERLAY */
-        #event-overlay {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 100;
-            display: flex; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        #celebration-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(10, 25, 47, 0.95);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100;
+            backdrop-filter: blur(10px);
         }
-        #event-overlay.active { opacity: 1; }
-
-        .event-box {
-            border: 2px solid var(--neon-pink); background: #000; padding: 40px 80px; text-align: center;
-            box-shadow: 0 0 50px var(--neon-pink), inset 0 0 20px var(--neon-pink);
-            transform: scale(0.8); transition: transform 0.3s;
-        }
-        #event-overlay.active .event-box { transform: scale(1); }
-
-        .event-title { font-size: 2rem; color: var(--neon-cyan); letter-spacing: 5px; text-transform: uppercase; margin-bottom: 20px; border-bottom: 1px solid var(--neon-cyan); display: inline-block; }
-        .event-agent { font-size: 4rem; font-weight: 700; color: #fff; margin-bottom: 10px; }
-        .event-value { font-size: 3rem; color: var(--neon-green); }
-
-        /* PROGRESS BAR */
-        .status-bar { position: fixed; bottom: 0; width: 100%; height: 3px; background: #111; }
-        .status-progress { height: 100%; background: var(--neon-cyan); width: 0%; transition: width 0.1s linear; }
+        #celebration-overlay.active { opacity: 1; }
         
-        /* ERROR BOX */
-        #error-msg { position: absolute; top: 10px; right: 10px; color: red; font-size: 0.8rem; display: none; }
+        .celeb-title { font-size: 2rem; color: #fff; letter-spacing: 8px; margin-bottom: 20px; text-transform: uppercase;}
+        .celeb-name { font-size: 5rem; font-weight: 900; margin-bottom: 20px; text-align: center; line-height: 1.1;}
+        .celeb-detail { 
+            font-size: 3rem; font-weight: 700; padding: 10px 40px; 
+            border: 2px solid; border-radius: 50px; background: rgba(0,0,0,0.3);
+            box-shadow: 0 0 20px inset;
+        }
 
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand">
-            <img src="Shoreline.ico" alt="Logo" onerror="this.style.opacity='0'">
-            <div class="brand-text">SHORE<span style="color:var(--neon-pink)">LINE</span></div>
+        <div class="logo-container">
+            <img src="Shoreline.ico" alt="Logo" onerror="this.style.display='none'">
+            <span class="dashboard-title">SHORELINE</span>
         </div>
-        <div class="total-display">
-            <div class="total-label">Ventas Totales</div>
-            <div class="total-value" id="ui-total">0</div>
+        <div class="total-box">
+            <div class="total-label">TOTAL VENTAS</div>
+            <div class="total-value" id="grand-total">0</div>
         </div>
     </header>
 
-    <main>
-        <section class="podium-section" id="ui-podium"></section>
-        <section class="list-section" id="ui-list"></section>
-    </main>
+    <main id="main-grid"></main>
 
-    <div id="event-overlay">
-        <div class="event-box">
-            <div class="event-title">XFER DETECTED</div>
-            <div class="event-agent" id="overlay-agent">AGENT</div>
-            <div class="event-value" id="overlay-value">+1</div>
-        </div>
+    <div id="celebration-overlay">
+        <div class="celeb-title">¡MOVIMIENTO!</div>
+        <div class="celeb-name" id="celeb-name">AGENTE</div>
+        <div class="celeb-detail" id="celeb-detail">+1</div>
     </div>
-    
-    <div id="error-msg"></div>
-    <div class="status-bar"><div class="status-progress" id="progress-bar"></div></div>
 
     <script>
         // --- CONFIGURACIÓN ---
-        // Asegúrese que este link es el correcto
-        const CONFIG = {
-            CSV_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv',
-            FETCH_INTERVAL: 4000,
-            PERSISTENCE: 4 // Intentos para aceptar una bajada (Anti-Parpadeo)
-        };
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv';
+        const FETCH_INTERVAL = 3000; 
+        
+        let memory = {}; 
+        let isFirstRun = true; 
+        let celebQueue = [];
+        let isCeleb = false;
+        
+        // Umbral de paciencia (4 intentos = aprox 12 segundos antes de aceptar una bajada)
+        const PERSISTENCE_THRESHOLD = 4; 
 
-        // --- ESTADO Y MEMORIA ---
-        let memory = {}; // { id: { xfers, cp, highestXfers, highestCp, glitchCountX, glitchCountC } }
-        let isFirstRun = true;
-        let queue = [];
-        let isCelebrating = false;
-
-        // --- INIT ---
         async function init() {
-            loop(); // Iniciar barra de progreso
-            await cycle(); // Primera carga inmediata
+            await fetchData();
+            setInterval(fetchData, FETCH_INTERVAL);
+            processQueue();
         }
 
-        // --- CICLO PRINCIPAL ---
-        async function cycle() {
+        async function fetchData() {
             try {
-                // Anti-Caché: Agregamos tiempo para forzar datos nuevos
-                const response = await fetch(CONFIG.CSV_URL + '&t=' + Date.now());
-                if (!response.ok) throw new Error("Error HTTP");
+                // Anti-Caché (Forzar datos frescos)
+                const url = CSV_URL + '&t=' + Date.now();
+                const response = await fetch(url);
                 const text = await response.text();
                 
-                // Si devuelve HTML (Login), detenemos para no crashear
-                if (text.trim().startsWith("<!DOCTYPE")) throw new Error("Acceso Denegado");
-
-                const agents = processData(text);
-                render(agents);
-                document.getElementById('error-msg').style.display = 'none';
-
-            } catch (err) {
-                console.error(err);
-                document.getElementById('error-msg').innerText = "Conexión: " + err.message;
-                document.getElementById('error-msg').style.display = 'block';
-            }
+                // Si la respuesta es HTML (Login), no intentamos parsear para evitar crash
+                if (text.trim().startsWith("<!DOCTYPE")) { console.error("Error: Acceso Denegado al CSV"); return; }
+                
+                const agents = processData(text); 
+                updateDashboard(agents);
+            } catch (err) { console.error("...", err); }
         }
 
-        // --- PROCESAMIENTO BLINDADO (Shoreline Logic) ---
         function processData(csvText) {
             const lines = csvText.trim().split(/\r\n|\n/);
-            const processedAgents = [];
+            const agents = [];
 
-            // Empezamos en 1 para saltar encabezados
             for (let i = 1; i < lines.length; i++) {
                 const row = lines[i].split(',');
-                if (row.length < 3) continue; // Mínimo ID, Nombre, Xfer
+                if (row.length < 5) continue;
 
-                // LECTURA POR ÍNDICE (Más seguro que por nombre)
                 const id = row[0].trim();
                 const name = row[1].trim();
-                let xfers = parseInt(row[2]) || 0; // Columna C
-                let cp = parseInt(row[4]) || 0;    // Columna E
+                let xfers = parseInt(row[2]) || 0; 
+                let cp = parseInt(row[4]) || 0;    
 
-                // Inicializar Memoria
+                // Inicializar memoria COMPLETA si es nuevo
                 if (!memory[id]) {
                     memory[id] = { 
-                        xfers: xfers, cp: cp, 
-                        highestXfers: xfers, highestCp: cp,
-                        glitchX: 0, glitchC: 0 
+                        xfers: xfers, 
+                        cp: cp, 
+                        highestXfers: xfers, // Récord histórico de hoy
+                        highestCp: cp,       // Récord histórico de hoy
+                        glitchCountXfer: 0,  
+                        glitchCountCp: 0     
                     };
-                }
-
+                } 
+                
                 const mem = memory[id];
 
-                // 1. ESTABILIZACIÓN XFERS
+                // ----------------------------------------------------
+                // 1. BLINDAJE DE XFERS (Estabilización)
+                // ----------------------------------------------------
                 if (xfers < mem.xfers) {
                     if (xfers === 0) { // Reinicio
-                        mem.xfers = 0; mem.highestXfers = 0; mem.glitchX = 0;
-                    } else {
-                        mem.glitchX++;
-                        if (mem.glitchX >= CONFIG.PERSISTENCE) {
-                            mem.xfers = xfers; mem.glitchX = 0;
+                        mem.xfers = 0; mem.highestXfers = 0; mem.glitchCountXfer = 0; 
+                    } else { // Bajada sospechosa
+                        mem.glitchCountXfer++;
+                        if (mem.glitchCountXfer >= PERSISTENCE_THRESHOLD) {
+                            mem.xfers = xfers; mem.glitchCountXfer = 0; // Aceptar
+                        } else {
+                            xfers = mem.xfers; // Ignorar (Mantener alto)
                         }
                     }
                 } else {
-                    mem.xfers = xfers; mem.glitchX = 0;
+                    mem.xfers = xfers; mem.glitchCountXfer = 0;
                 }
 
-                // 2. ESTABILIZACIÓN CP
+                // ----------------------------------------------------
+                // 2. BLINDAJE DE CP (IGUAL DE ESTRICTO)
+                // ----------------------------------------------------
                 if (cp < mem.cp) {
-                    if (cp === 0) {
-                        mem.cp = 0; mem.highestCp = 0; mem.glitchC = 0;
-                    } else {
-                        mem.glitchC++;
-                        if (mem.glitchC >= CONFIG.PERSISTENCE) {
-                            mem.cp = cp; mem.glitchC = 0;
+                    if (cp === 0) { // Reinicio
+                        mem.cp = 0; mem.highestCp = 0; mem.glitchCountCp = 0; 
+                    } else { // Bajada sospechosa
+                        mem.glitchCountCp++;
+                        if (mem.glitchCountCp >= PERSISTENCE_THRESHOLD) {
+                            mem.cp = cp; mem.glitchCountCp = 0; // Aceptar
+                        } else {
+                            cp = mem.cp; // Ignorar (Mantener alto)
                         }
                     }
                 } else {
-                    mem.cp = cp; mem.glitchC = 0;
+                    mem.cp = cp; mem.glitchCountCp = 0;
                 }
 
-                // 3. DETECCIÓN DE CELEBRACIÓN (Solo Récords)
-                if (mem.xfers > mem.highestXfers) {
-                    if (!isFirstRun) queue.push({ name, val: '+1', type: 'XFER' });
-                    mem.highestXfers = mem.xfers;
-                }
-                if (mem.cp > mem.highestCp) {
-                    if (!isFirstRun) queue.push({ name, val: '+1', type: 'CP' });
-                    mem.highestCp = mem.cp;
-                }
-
-                processedAgents.push({
-                    id, name, 
-                    xfers: mem.xfers, 
-                    cp: mem.cp, 
-                    score: mem.xfers + (mem.cp * 0.001)
-                });
-            }
-
-            if (isFirstRun) isFirstRun = false;
-            return processedAgents;
-        }
-
-        // --- RENDERIZADO (Neon Style) ---
-        function render(agents) {
-            // Ordenar
-            agents.sort((a, b) => b.score - a.score);
-            
-            // Total
-            const total = agents.reduce((sum, a) => sum + a.xfers, 0);
-            animateNumber(document.getElementById('ui-total'), total);
-
-            // Podium (Top 3)
-            const podiumEl = document.getElementById('ui-podium');
-            const top3 = [agents[1], agents[0], agents[2]]; // Orden visual: 2, 1, 3
-            
-            podiumEl.innerHTML = top3.map((a, i) => {
-                if (!a) return '<div class="podium-card" style="opacity:0"></div>';
-                let rank = i === 1 ? 1 : (i === 0 ? 2 : 3);
-                return `
-                    <div class="podium-card rank-${rank}">
-                        <div class="podium-rank">#${rank}</div>
-                        <div class="podium-name">${a.name}</div>
-                        <div class="podium-score">${a.xfers}</div>
-                        <div class="podium-cp">CP: ${a.cp}</div>
-                    </div>
-                `;
-            }).join('');
-
-            // Lista (Resto)
-            const listEl = document.getElementById('ui-list');
-            const rest = agents.slice(3, 51); // Hasta 48 items en lista
-            
-            listEl.innerHTML = rest.map((a, i) => `
-                <div class="list-card">
-                    <div class="list-rank">#${i + 4}</div>
-                    <div class="list-info">
-                        <div class="list-name">${a.name}</div>
-                        <div class="list-cp">CP: ${a.cp}</div>
-                    </div>
-                    <div class="list-score">${a.xfers}</div>
-                </div>
-            `).join('');
-        }
-
-        // --- UTILIDADES ---
-        function animateNumber(el, end) {
-            const start = parseInt(el.innerText) || 0;
-            if (start === end) return;
-            el.innerText = end; // Simple update, animation optional
-        }
-
-        function loop() {
-            let progress = 0;
-            const bar = document.getElementById('progress-bar');
-            const interval = 50;
-            const step = 100 / (CONFIG.FETCH_INTERVAL / interval);
-
-            const timer = setInterval(() => {
-                progress += step;
-                bar.style.width = `${progress}%`;
+                // ----------------------------------------------------
+                // 3. LÓGICA DE CELEBRACIÓN (CANDADO ANTI-REPETICIÓN)
+                // ----------------------------------------------------
                 
-                // Procesar cola de celebración mientras esperamos
-                if (!isCelebrating && queue.length > 0) {
-                    triggerOverlay(queue.shift());
+                // XFERS: Solo celebra si supera el récord histórico
+                if (mem.xfers > mem.highestXfers) {
+                    if (!isFirstRun) celebQueue.push({ name: name, text: '+1 XFER', mainColor: '#64ffda' });
+                    mem.highestXfers = mem.xfers; 
                 }
 
-                if (progress >= 100) {
-                    clearInterval(timer);
-                    bar.style.width = '0%';
-                    cycle().then(() => loop());
+                // CP: Solo celebra si supera el récord histórico (CORREGIDO AQUÍ)
+                if (mem.cp > mem.highestCp) {
+                    if (!isFirstRun) celebQueue.push({ name: name, text: '+1 CP', mainColor: '#bd93f9' });
+                    mem.highestCp = mem.cp; 
                 }
-            }, interval);
+
+                // Puntaje Maestro
+                const masterScore = mem.xfers + (mem.cp * 0.001);
+                agents.push({ id, name, xfers: mem.xfers, cp: mem.cp, masterScore });
+            }
+            
+            if (isFirstRun) isFirstRun = false;
+            return agents;
         }
 
-        function triggerOverlay(data) {
-            isCelebrating = true;
-            const el = document.getElementById('event-overlay');
-            const title = el.querySelector('.event-title');
-            const val = document.getElementById('overlay-value');
+        function updateDashboard(agents) {
+            agents.sort((a, b) => b.masterScore - a.masterScore);
+            const total = agents.reduce((sum, ag) => sum + ag.xfers, 0);
+            document.getElementById('grand-total').innerText = total;
 
-            // Configurar Colores
-            const color = data.type === 'CP' ? '#bc13fe' : '#00ffff';
-            title.innerText = data.type === 'CP' ? 'CP GAINED' : 'XFER DETECTED';
-            title.style.color = color;
-            title.style.borderColor = color;
-            val.style.color = data.type === 'CP' ? '#bc13fe' : '#0aff0a';
+            // TOP 60 (15 Filas x 4 Columnas)
+            const top60 = agents.slice(0, 60);
+            const grid = document.getElementById('main-grid');
+            grid.innerHTML = '';
+            
+            const cols = [document.createElement('div'), document.createElement('div'), document.createElement('div'), document.createElement('div')];
+            cols.forEach(c => { c.className = 'column'; grid.appendChild(c); });
 
-            document.getElementById('overlay-agent').innerText = data.name;
-            el.classList.add('active');
+            top60.forEach((agent, i) => {
+                const card = createCard(agent, i + 1);
+                // Distribución 15 por columna
+                if (i < 15) cols[0].appendChild(card);
+                else if (i < 30) cols[1].appendChild(card);
+                else if (i < 45) cols[2].appendChild(card);
+                else cols[3].appendChild(card);
+            });
+        }
 
-            // Confeti
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: [color, '#fff'] });
+        function createCard(agent, rank) {
+            const div = document.createElement('div');
+            div.className = `agent-card rank-${rank}`;
+            div.innerHTML = `
+                <div class="rank">#${rank}</div>
+                <div class="agent-info">
+                    <div class="agent-name">${agent.name}</div>
+                    <div class="agent-cp-display">CP: ${agent.cp}</div>
+                </div>
+                <div class="scores-container">
+                    <div class="agent-score">${agent.xfers}</div>
+                </div>
+            `;
+            return div;
+        }
+
+        // --- SISTEMA DE VELOCIDAD DINÁMICA ---
+        function processQueue() {
+            setInterval(() => {
+                if (!isCeleb && celebQueue.length > 0) {
+                    
+                    // Velocidad según el tráfico
+                    let duration = 3000; 
+                    if (celebQueue.length > 5) duration = 500; // Flash
+                    else if (celebQueue.length > 2) duration = 1500; // Rápido
+
+                    const event = celebQueue.shift();
+                    triggerCelebration(event, duration);
+                }
+            }, 100);
+        }
+
+        function triggerCelebration(event, duration) {
+            isCeleb = true;
+            const overlay = document.getElementById('celebration-overlay');
+            const nameEl = document.getElementById('celeb-name');
+            const detailEl = document.getElementById('celeb-detail');
+
+            nameEl.innerText = event.name;
+            nameEl.style.color = event.mainColor;
+            nameEl.style.textShadow = `0 0 30px ${event.mainColor}`;
+            detailEl.innerText = event.text;
+            detailEl.style.color = event.mainColor;
+            detailEl.style.borderColor = event.mainColor;
+            detailEl.style.boxShadow = `0 0 20px ${event.mainColor} inset`;
+
+            overlay.classList.add('active');
+            
+            const particleCount = duration < 1000 ? 50 : 150; 
+            confetti({
+                particleCount: particleCount,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: [event.mainColor, '#ffffff'],
+                disableForReducedMotion: true
+            });
 
             setTimeout(() => {
-                el.classList.remove('active');
-                setTimeout(() => isCelebrating = false, 500);
-            }, 4000);
+                overlay.classList.remove('active');
+                setTimeout(() => { isCeleb = false; }, 100);
+            }, duration);
         }
 
-        // Arrancar
         init();
-
     </script>
 </body>
 </html>
