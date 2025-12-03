@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shoreline Predator - Dynamic Speed</title>
+    <title>Shoreline Predator - V5 Stable</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
@@ -46,63 +46,37 @@
         .total-label { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.6; margin-bottom: 2px;}
         .total-value { font-size: 2.8rem; font-weight: 800; color: var(--accent-color); line-height: 0.9; text-shadow: 0 0 15px rgba(100, 255, 218, 0.2);}
 
-/* GRID */
+        /* GRID */
         main {
             flex: 1; 
-            /* Padding lateral mínimo (2px) para ganar espacio horizontal */
             padding: 15px 2px;
             display: grid; 
-            /* minmax(0, 1fr) fuerza a que las columnas no se desborden */
             grid-template-columns: repeat(4, minmax(0, 1fr));
-            /* Espacio entre columnas cerrado */
             gap: 4px; 
             align-content: start;
             overflow: hidden;
+            position: relative; /* Para posicionar errores */
         }
 
         .column { display: flex; flex-direction: column; gap: 6px; } 
 
-/* CARDS - Altura calculada para 13 filas */
+        /* CARDS */
         .agent-card {
             display: flex; align-items: center; justify-content: space-between;
             background: var(--glass-bg);
             border-left: 2px solid rgba(100, 255, 218, 0.1);
             border-radius: 4px; 
-            padding: 0 8px; /* Un poco más de aire interno */
-            
-            /* CAMBIO: Altura exacta para 13 filas */
-            height: 5.8vh; 
-            
+            padding: 0 5px;
+            height: 5.0vh; 
             transition: all 0.3s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-/* RANGO - Espacio Ampliado */
-        .rank { 
-            font-size: 1.1rem; 
-            font-weight: 800; 
-            
-            /* CAMBIO CRÍTICO: De 25px a 35px para evitar traslape en #10, #11... */
-            width: 35px; 
-            
-            color: rgba(255,255,255,0.15); 
-            text-align: left; /* Alineado a la izq para mantener orden */
-        }
-        
+        /* RANGO */
+        .rank { font-size: 1.0rem; font-weight: 800; width: 25px; color: rgba(255,255,255,0.15); text-align: center; }
         .agent-info { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-left: 5px; overflow: hidden; }
-        
-        .agent-name { 
-            font-size: 0.75rem; 
-            font-weight: 600; color: #fff; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; margin-bottom: 1px; 
-        }
-        
-        .agent-cp-display { 
-            font-size: 0.95rem; 
-            color: var(--cp-color); 
-            font-weight: 800; 
-            letter-spacing: 0.5px; text-transform: uppercase; 
-        }
-        
+        .agent-name { font-size: 0.75rem; font-weight: 600; color: #fff; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; margin-bottom: 1px; }
+        .agent-cp-display { font-size: 0.95rem; color: var(--cp-color); font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
         .scores-container { text-align: right; min-width: 30px; }
         .agent-score { font-size: 1.4rem; font-weight: 800; color: var(--accent-color); line-height: 1; }
         
@@ -112,7 +86,7 @@
         .rank-3 { background: linear-gradient(90deg, rgba(205, 127, 50, 0.08), transparent); border-left: 2px solid #cd7f32; }
         .rank-1 .rank { color: #ffd700; } .rank-2 .rank { color: #c0c0c0; } .rank-3 .rank { color: #cd7f32; }
 
-        /* OVERLAY */
+        /* OVERLAY CELEBRACION */
         #celebration-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(10, 25, 47, 0.95);
@@ -121,13 +95,15 @@
             backdrop-filter: blur(10px);
         }
         #celebration-overlay.active { opacity: 1; }
-        
         .celeb-title { font-size: 2rem; color: #fff; letter-spacing: 8px; margin-bottom: 20px; text-transform: uppercase;}
         .celeb-name { font-size: 5rem; font-weight: 900; margin-bottom: 20px; text-align: center; line-height: 1.1;}
-        .celeb-detail { 
-            font-size: 3rem; font-weight: 700; padding: 10px 40px; 
-            border: 2px solid; border-radius: 50px; background: rgba(0,0,0,0.3);
-            box-shadow: 0 0 20px inset;
+        .celeb-detail { font-size: 3rem; font-weight: 700; padding: 10px 40px; border: 2px solid; border-radius: 50px; background: rgba(0,0,0,0.3); box-shadow: 0 0 20px inset; }
+
+        /* MENSAJES DE ERROR VISIBLES */
+        #error-box {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.2); border: 1px solid red; color: #ff9999;
+            padding: 20px; border-radius: 10px; display: none; text-align: center;
         }
 
     </style>
@@ -145,7 +121,9 @@
         </div>
     </header>
 
-    <main id="main-grid"></main>
+    <main id="main-grid">
+        <div id="error-box">Esperando datos...</div>
+    </main>
 
     <div id="celebration-overlay">
         <div class="celeb-title">¡MOVIMIENTO!</div>
@@ -153,17 +131,20 @@
         <div class="celeb-detail" id="celeb-detail">+1</div>
     </div>
 
-
-<script>
+    <script>
+        // --- CONFIGURACIÓN URL ---
+        // Asegúrate de que este enlace sea el actual de tu Google Sheet publicado como CSV
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv';
+        
         const FETCH_INTERVAL = 3000; 
         
+        // Memoria y Estado
         let memory = {}; 
         let isFirstRun = true; 
         let celebQueue = [];
         let isCeleb = false;
         
-        // Umbral de paciencia para errores (aprox 12 segs)
+        // Umbral de persistencia para aceptar bajadas (Anti-Blink)
         const PERSISTENCE_THRESHOLD = 4; 
 
         async function init() {
@@ -174,108 +155,103 @@
 
         async function fetchData() {
             try {
+                // Anti-Caché para evitar datos viejos
                 const url = CSV_URL + '&t=' + Date.now();
                 const response = await fetch(url);
+                
+                if (!response.ok) throw new Error("Error HTTP: " + response.status);
+                
                 const text = await response.text();
+                
+                // Validación básica de contenido
+                if (!text || text.length < 10) throw new Error("CSV Vacío o Enlace Incorrecto");
+
+                // Procesamiento
                 const agents = processData(text); 
                 updateDashboard(agents);
-            } catch (err) { console.error("...", err); }
+                
+                // Ocultar error si todo va bien
+                document.getElementById('error-box').style.display = 'none';
+
+            } catch (err) { 
+                console.error("Error Fetch:", err);
+                const errBox = document.getElementById('error-box');
+                errBox.style.display = 'block';
+                errBox.innerText = "Error de Conexión: " + err.message + "\nVerifique el enlace CSV.";
+            }
         }
 
         function processData(csvText) {
             const lines = csvText.trim().split(/\r\n|\n/);
             const agents = [];
 
+            // Empezamos en 1 para saltar encabezados
             for (let i = 1; i < lines.length; i++) {
                 const row = lines[i].split(',');
-                if (row.length < 5) continue;
+                // Validación flexible: necesitamos al menos ID, Nombre, Xfer (3 cols)
+                if (row.length < 3) continue;
 
                 const id = row[0].trim();
                 const name = row[1].trim();
                 let xfers = parseInt(row[2]) || 0; 
-                let cp = parseInt(row[4]) || 0;    
+                let cp = parseInt(row[4]) || 0; // Si no hay col 4, asume 0
 
-                // Inicializar memoria COMPLETA si es nuevo
+                // --- SISTEMA BLINDADO DE ESTABILIDAD (XFER + CP) ---
                 if (!memory[id]) {
                     memory[id] = { 
-                        xfers: xfers, 
-                        cp: cp, 
-                        highestXfers: xfers, // Récord Xfer
-                        highestCp: cp,       // Récord CP
-                        glitchCountXfer: 0,  // Contador de error Xfer
-                        glitchCountCp: 0     // Contador de error CP (NUEVO)
+                        xfers: xfers, cp: cp, 
+                        highestXfers: xfers, highestCp: cp,
+                        glitchCountXfer: 0, glitchCountCp: 0
                     };
                 } 
                 
                 const mem = memory[id];
 
-                // ==========================================
-                // 1. BLINDAJE DE XFERS (Lógica Robusta)
-                // ==========================================
+                // 1. BLINDAJE XFER
                 if (xfers < mem.xfers) {
                     if (xfers === 0) {
-                        mem.xfers = 0;
-                        mem.highestXfers = 0; 
-                        mem.glitchCountXfer = 0;
+                        // Reinicio
+                        mem.xfers = 0; mem.highestXfers = 0; mem.glitchCountXfer = 0;
                     } else {
+                        // Posible Glitch
                         mem.glitchCountXfer++;
                         if (mem.glitchCountXfer >= PERSISTENCE_THRESHOLD) {
-                            mem.xfers = xfers; 
-                            mem.glitchCountXfer = 0;
+                            mem.xfers = xfers; mem.glitchCountXfer = 0; // Aceptar bajada
                         } else {
-                            xfers = mem.xfers; // Ignorar bajada
+                            xfers = mem.xfers; // Ignorar (Anti-Parpadeo)
                         }
                     }
                 } else {
-                    mem.xfers = xfers;
-                    mem.glitchCountXfer = 0;
+                    mem.xfers = xfers; mem.glitchCountXfer = 0; // Subida o Igual
                 }
 
-                // ==========================================
-                // 2. BLINDAJE DE CP (AHORA IGUAL DE ROBUSTO)
-                // ==========================================
+                // 2. BLINDAJE CP
                 if (cp < mem.cp) {
                     if (cp === 0) {
-                        // Reinicio de día para CP
-                        mem.cp = 0;
-                        mem.highestCp = 0; 
-                        mem.glitchCountCp = 0;
+                        mem.cp = 0; mem.highestCp = 0; mem.glitchCountCp = 0;
                     } else {
-                        // Bajada sospechosa de CP
                         mem.glitchCountCp++;
                         if (mem.glitchCountCp >= PERSISTENCE_THRESHOLD) {
-                            mem.cp = cp; // Aceptamos la corrección
-                            mem.glitchCountCp = 0;
+                            mem.cp = cp; mem.glitchCountCp = 0;
                         } else {
-                            cp = mem.cp; // Falso positivo, mantenemos el alto
+                            cp = mem.cp;
                         }
                     }
                 } else {
-                    // Subida o Igualdad de CP
-                    mem.cp = cp;
-                    mem.glitchCountCp = 0;
+                    mem.cp = cp; mem.glitchCountCp = 0;
                 }
 
-                // ==========================================
-                // 3. LÓGICA DE CELEBRACIÓN (Anti-Repetición)
-                // ==========================================
-                
-                // Solo celebramos si supera el RÉCORD HISTÓRICO
-                if (xfers > mem.highestXfers) {
-                    if (!isFirstRun) {
-                        celebQueue.push({ name: name, text: '+1 XFER', mainColor: '#64ffda' });
-                    }
-                    mem.highestXfers = xfers; 
+                // 3. LÓGICA DE CELEBRACIÓN (Solo si supera RÉCORD HISTÓRICO)
+                if (mem.xfers > mem.highestXfers) {
+                    if (!isFirstRun) celebQueue.push({ name: name, text: '+1 XFER', mainColor: '#64ffda' });
+                    mem.highestXfers = mem.xfers; 
+                }
+                if (mem.cp > mem.highestCp) {
+                    if (!isFirstRun) celebQueue.push({ name: name, text: '+1 CP', mainColor: '#bd93f9' });
+                    mem.highestCp = mem.cp; 
                 }
 
-                if (cp > mem.highestCp) {
-                    if (!isFirstRun) {
-                        celebQueue.push({ name: name, text: '+1 CP', mainColor: '#bd93f9' });
-                    }
-                    mem.highestCp = cp; // Actualizamos el récord de CP
-                }
-
-                // Calcular Puntaje Maestro
+                // Puntaje Maestro
                 const masterScore = mem.xfers + (mem.cp * 0.001);
                 agents.push({ id, name, xfers: mem.xfers, cp: mem.cp, masterScore });
             }
@@ -289,22 +265,20 @@
             const total = agents.reduce((sum, ag) => sum + ag.xfers, 0);
             document.getElementById('grand-total').innerText = total;
 
-            // Top 52
-            const top52 = agents.slice(0, 52);
+            const top60 = agents.slice(0, 60);
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
             
-            const cols = [
-                document.createElement('div'), document.createElement('div'), 
-                document.createElement('div'), document.createElement('div')
-            ];
+            // Recrear columnas
+            const cols = [document.createElement('div'), document.createElement('div'), document.createElement('div'), document.createElement('div')];
             cols.forEach(c => { c.className = 'column'; grid.appendChild(c); });
 
-            top52.forEach((agent, i) => {
+            // Rellenar Grid
+            top60.forEach((agent, i) => {
                 const card = createCard(agent, i + 1);
-                if (i < 13) cols[0].appendChild(card);
-                else if (i < 26) cols[1].appendChild(card);
-                else if (i < 39) cols[2].appendChild(card);
+                if (i < 15) cols[0].appendChild(card);
+                else if (i < 30) cols[1].appendChild(card);
+                else if (i < 45) cols[2].appendChild(card);
                 else cols[3].appendChild(card);
             });
         }
@@ -345,8 +319,31 @@
             const detailEl = document.getElementById('celeb-detail');
 
             nameEl.innerText = event.name;
-            nameEl.style.    
-    
-    
+            nameEl.style.color = event.mainColor;
+            nameEl.style.textShadow = `0 0 30px ${event.mainColor}`;
+            detailEl.innerText = event.text;
+            detailEl.style.color = event.mainColor;
+            detailEl.style.borderColor = event.mainColor;
+            detailEl.style.boxShadow = `0 0 20px ${event.mainColor} inset`;
+
+            overlay.classList.add('active');
+            
+            const particleCount = duration < 1000 ? 50 : 150; 
+            confetti({
+                particleCount: particleCount,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: [event.mainColor, '#ffffff'],
+                disableForReducedMotion: true
+            });
+
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                setTimeout(() => { isCeleb = false; }, 100);
+            }, duration);
+        }
+
+        init();
+    </script>
 </body>
 </html>
