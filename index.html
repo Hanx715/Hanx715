@@ -3,23 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shoreline - Dashboard de Ventas</title>
-    <!-- Google Fonts -->
+    <title>NEON VERTEX - Sales Dashboard</title>
+    <!-- Google Fonts: Rajdhani for that Tech/Sci-Fi look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
         :root {
-            --bg-color: #0a192f;
-            --accent-color: #64ffda;
-            --secondary-color: #9d4edd; /* Purple for CP */
-            --text-color: #e6f1ff;
-            --glass-bg: rgba(17, 34, 64, 0.7);
-            --glass-border: rgba(100, 255, 218, 0.1);
-            --font-main: 'Montserrat', sans-serif;
+            --bg-core: #050505;
+            --bg-panel: #111111;
+            --border-color: #333333;
+
+            --neon-pink: #ff00ff;
+            --neon-cyan: #00ffff;
+            --neon-violet: #bc13fe;
+            --neon-green: #0aff0a;
+
+            --text-main: #ffffff;
+            --text-muted: #888888;
+
+            --font-tech: 'Rajdhani', sans-serif;
         }
 
         * {
@@ -29,250 +35,305 @@
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: var(--font-main);
-            overflow: hidden; /* Prevent scrolling on TV */
+            background-color: var(--bg-core);
+            color: var(--text-main);
+            font-family: var(--font-tech);
             height: 100vh;
-            width: 100vw;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            background: radial-gradient(circle at 50% 50%, #112240 0%, #0a192f 100%);
+            background-image:
+                linear-gradient(rgba(5, 5, 5, 0.95), rgba(5, 5, 5, 0.95)),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 1px,
+                    #111 1px,
+                    #111 2px
+                );
+            background-size: 100% 4px;
         }
 
-        /* --- Header --- */
+        /* --- HEADER --- */
         header {
-            height: 100px;
+            height: 120px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 40px;
-            background: rgba(10, 25, 47, 0.9);
-            border-bottom: 1px solid var(--glass-border);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            padding: 0 50px;
+            border-bottom: 2px solid var(--border-color);
+            background: rgba(17, 17, 17, 0.8);
+            backdrop-filter: blur(5px);
+            position: relative;
             z-index: 10;
         }
 
-        .logo-container {
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+            box-shadow: 0 0 10px var(--neon-pink);
+        }
+
+        .brand {
             display: flex;
             align-items: center;
             gap: 20px;
         }
 
-        .logo-container img {
+        .brand img {
             height: 60px;
-            width: auto;
-            filter: drop-shadow(0 0 10px rgba(100, 255, 218, 0.3));
+            filter: drop-shadow(0 0 5px var(--neon-cyan));
         }
 
-        .dashboard-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            letter-spacing: 2px;
-            color: #fff;
+        .brand-text {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 4px;
             text-transform: uppercase;
+            background: linear-gradient(to right, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .total-container {
+        .total-display {
             text-align: right;
+            position: relative;
         }
 
         .total-label {
-            font-size: 0.8rem;
+            font-size: 1rem;
+            color: var(--neon-cyan);
+            letter-spacing: 2px;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            opacity: 0.8;
-            color: var(--text-color);
+            margin-bottom: 5px;
         }
 
         .total-value {
-            font-size: 3rem;
-            font-weight: 800;
-            color: var(--accent-color);
-            text-shadow: 0 0 15px rgba(100, 255, 218, 0.4);
-            line-height: 1;
-            transition: all 0.5s ease;
+            font-size: 4rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 20px var(--neon-pink);
+            line-height: 0.9;
         }
 
-        /* --- Main Content (Grid) --- */
+        /* --- MAIN LAYOUT --- */
         main {
             flex: 1;
-            padding: 20px;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 4 columns */
-            gap: 15px;
-            align-content: start; /* Don't stretch rows */
-            overflow-y: hidden; /* Hide overflow */
-            width: 100%;
-            max-width: 1920px;
-            margin: 0 auto;
-        }
-
-        .column {
+            padding: 30px 50px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 30px;
+            overflow: hidden;
         }
 
-        /* Agent Card */
-        .agent-card {
+        /* PODIUM (Top 3) */
+        .podium-section {
             display: flex;
-            align-items: center;
-            gap: 15px; /* Added gap to prevent overlap */
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px; /* Slightly smaller radius for denser UI */
-            padding: 8px 15px; /* Compact padding */
-            backdrop-filter: blur(10px);
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-            position: relative;
-            height: 55px; /* Fixed height for uniformity */
-        }
-
-        .agent-card.flash {
-            animation: flashCard 0.5s ease-out;
-        }
-
-        @keyframes flashCard {
-            0% { background-color: rgba(157, 78, 221, 0.5); }
-            100% { background-color: var(--glass-bg); }
-        }
-
-        .rank {
-            font-size: 1.2rem;
-            font-weight: 800;
-            color: rgba(255, 255, 255, 0.3);
-            width: 50px; /* Increased width to prevent overlap */
-            min-width: 50px; /* Prevent shrinking */
-            text-align: center; /* Centered as requested */
-        }
-
-        .agent-info {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
             justify-content: center;
+            align-items: flex-end; /* Align bottom so #1 stands tall */
+            gap: 30px;
+            height: 35%;
+        }
+
+        .podium-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.5s ease;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            width: 280px;
+        }
+
+        /* Dynamic Heights for Podium */
+        .podium-card.rank-1 { height: 100%; border-color: var(--neon-pink); box-shadow: 0 0 20px rgba(255, 0, 255, 0.2); z-index: 2; }
+        .podium-card.rank-2 { height: 85%; border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 255, 255, 0.15); }
+        .podium-card.rank-3 { height: 75%; border-color: var(--neon-violet); box-shadow: 0 0 15px rgba(188, 19, 254, 0.15); }
+
+        .podium-rank {
+            position: absolute;
+            top: -15px;
+            background: #000;
+            padding: 5px 15px;
+            border: 1px solid currentColor;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px currentColor;
+        }
+        .rank-1 .podium-rank { color: var(--neon-pink); }
+        .rank-2 .podium-rank { color: var(--neon-cyan); }
+        .rank-3 .podium-rank { color: var(--neon-violet); }
+
+        .podium-name {
+            font-size: 1.8rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 10px;
+            padding: 0 10px;
+            width: 100%;
             overflow: hidden;
             white-space: nowrap;
+            text-overflow: ellipsis;
         }
 
-        .agent-name {
-            font-size: 0.9rem;
-            font-weight: 600;
+        .podium-score {
+            font-size: 3.5rem;
+            font-weight: 700;
             color: #fff;
-            text-overflow: ellipsis;
+        }
+
+        .podium-cp {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* GRID (Rank 4-25) */
+        .list-section {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 columns */
+            grid-template-rows: repeat(6, 1fr); /* Up to 6 rows to fit ~24 items */
+            gap: 15px;
+            align-content: start;
+        }
+
+        .list-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            gap: 15px;
+            transition: background 0.3s;
+        }
+
+        .list-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .list-rank {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            width: 30px;
+            text-align: center;
+        }
+
+        .list-info {
+            flex: 1;
             overflow: hidden;
         }
 
-        .agent-cp {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--secondary-color); /* Purple */
-            letter-spacing: 0.5px;
+        .list-name {
+            font-size: 1.1rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .agent-score {
+        .list-cp {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .list-score {
             font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--accent-color);
-            text-align: right;
-            min-width: 40px;
+            font-weight: 700;
+            color: var(--neon-green);
+            text-shadow: 0 0 5px rgba(10, 255, 10, 0.3);
         }
 
-        /* Top 3 Highlighting */
-        .agent-card.rank-1 { background: rgba(100, 255, 218, 0.10); border-color: var(--accent-color); }
-        .agent-card.rank-2 { background: rgba(100, 255, 218, 0.05); }
-        .agent-card.rank-3 { background: rgba(100, 255, 218, 0.02); }
+        /* ANIMATIONS */
+        @keyframes flash-neon {
+            0% { background: var(--bg-panel); }
+            50% { background: rgba(255, 0, 255, 0.3); }
+            100% { background: var(--bg-panel); }
+        }
 
-        .rank-1 .rank { color: #ffd700; }
-        .rank-2 .rank { color: #c0c0c0; }
-        .rank-3 .rank { color: #cd7f32; }
+        .flash {
+            animation: flash-neon 0.8s ease-out;
+        }
 
-        /* --- Notification Overlay --- */
-        #celebration-overlay {
+        /* OVERLAY */
+        #event-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(10, 25, 47, 0.95);
-            backdrop-filter: blur(15px);
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
             z-index: 100;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             opacity: 0;
-            pointer-events: none; /* Allow clicking through when hidden */
-            transition: opacity 0.5s ease;
+            pointer-events: none;
+            transition: opacity 0.3s;
         }
 
-        #celebration-overlay.active {
+        #event-overlay.active {
             opacity: 1;
             pointer-events: all;
         }
 
-        .celebration-content {
+        .event-box {
+            border: 2px solid var(--neon-pink);
+            background: #000;
+            padding: 40px 80px;
             text-align: center;
-            animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 50px var(--neon-pink), inset 0 0 20px var(--neon-pink);
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .celebration-title {
-            font-size: 3rem;
-            color: #fff;
-            margin-bottom: 20px;
-            text-transform: uppercase;
+        #event-overlay.active .event-box {
+            transform: scale(1);
+        }
+
+        .event-title {
+            font-size: 2rem;
+            color: var(--neon-cyan);
             letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--neon-cyan);
+            display: inline-block;
         }
 
-        .celebration-agent {
+        .event-agent {
             font-size: 5rem;
-            font-weight: 800;
-            color: var(--accent-color);
-            margin-bottom: 10px;
-            text-shadow: 0 0 30px rgba(100, 255, 218, 0.6);
-        }
-
-        .celebration-detail {
-            font-size: 2.5rem;
+            font-weight: 700;
             color: #fff;
-            font-weight: 600;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            margin-bottom: 10px;
         }
 
-        @keyframes zoomIn {
-            from { transform: scale(0.5); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+        .event-value {
+            font-size: 3rem;
+            color: var(--neon-green);
         }
 
-        /* Loading State */
-        .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: var(--accent-color);
-            font-size: 1.5rem;
-            animation: pulse 1.5s infinite;
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 5px;
+            background: #111;
         }
-
-        @keyframes pulse {
-            0% { opacity: 0.5; }
-            50% { opacity: 1; }
-            100% { opacity: 0.5; }
-        }
-
-        /* Error Message */
-        .error-msg {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(255, 0, 0, 0.2);
-            color: #ff6b6b;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            display: none;
-            z-index: 200;
+        .status-progress {
+            height: 100%;
+            background: var(--neon-cyan);
+            width: 0%;
+            transition: width 0.5s linear;
         }
 
     </style>
@@ -280,314 +341,379 @@
 <body>
 
     <header>
-        <div class="logo-container">
-            <!-- Looks for Shoreline.ico locally -->
-            <img src="Shoreline.ico" alt="Shoreline Logo" onerror="this.style.display='none'">
-            <div class="dashboard-title">Shoreline</div>
+        <div class="brand">
+            <img src="Shoreline.ico" alt="Logo" onerror="this.style.opacity='0'">
+            <div class="brand-text">NEON<span style="color:var(--neon-pink)">VERTEX</span></div>
         </div>
-        <div class="total-container">
-            <div class="total-label">Total Xfers</div>
-            <div class="total-value" id="grand-total">0</div>
+        <div class="total-display">
+            <div class="total-label">Mission Total</div>
+            <div class="total-value" id="ui-total">0</div>
         </div>
     </header>
 
-    <main id="main-grid">
-        <div class="loading">Cargando datos del océano...</div>
+    <main>
+        <!-- Top 3 -->
+        <section class="podium-section" id="ui-podium">
+            <!-- Injected by JS -->
+        </section>
+
+        <!-- Rest of List -->
+        <section class="list-section" id="ui-list">
+            <!-- Injected by JS -->
+        </section>
     </main>
 
-    <div id="celebration-overlay">
-        <div class="celebration-content">
-            <div class="celebration-title">¡NUEVA VENTA!</div>
-            <div class="celebration-agent" id="celeb-agent-name">Nombre Agente</div>
-            <div class="celebration-detail">+<span id="celeb-amount">1</span></div>
+    <div id="event-overlay">
+        <div class="event-box">
+            <div class="event-title">XFER DETECTED</div>
+            <div class="event-agent" id="overlay-agent">AGENT</div>
+            <div class="event-value" id="overlay-value">+1</div>
         </div>
     </div>
 
-    <div class="error-msg" id="error-display"></div>
+    <div class="status-bar"><div class="status-progress" id="progress-bar"></div></div>
 
     <script>
-        // --- CONFIGURATION ---
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv';
-        const FETCH_INTERVAL = 1000; // 5 seconds
-        const CELEBRATION_DURATION = 1000; // 5 seconds
+        /**
+         * APPLICATION ARCHITECTURE
+         * 1. DataService: Handles fetching and CSV parsing.
+         * 2. Store: Manages state (agents, totals) and business logic (sorting, jitter-check).
+         * 3. EventBus: Simple pub/sub for decoupling.
+         * 4. Renderer: Manipulates the DOM based on state.
+         */
 
-        // --- STATE ---
-        let previousData = {}; // Map: ID -> { xfers: Number, cp: Number }
-        let isFirstLoad = true;
-        let celebrationQueue = [];
-        let isCelebrating = false;
+        // --- CONSTANTS ---
+        const CONFIG = {
+            CSV_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv',
+            FETCH_INTERVAL: 5000,
+            TOP_COUNT: 25
+        };
 
-        // --- ELEMENTS ---
-        const mainGrid = document.getElementById('main-grid');
-        const grandTotalEl = document.getElementById('grand-total');
-        const overlay = document.getElementById('celebration-overlay');
-        const celebNameEl = document.getElementById('celeb-agent-name');
-        const celebAmountEl = document.getElementById('celeb-amount');
-        const errorDisplay = document.getElementById('error-display');
-
-        // --- MAIN LOOP ---
-        async function init() {
-            await fetchData();
-            scheduleNextFetch();
-            processCelebrationQueue();
-        }
-
-        function scheduleNextFetch() {
-            setTimeout(async () => {
-                await fetchData();
-                scheduleNextFetch();
-            }, FETCH_INTERVAL);
-        }
-
-        async function fetchData() {
-            try {
-                const response = await fetch(CSV_URL);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const responseText = await response.text();
-
-                const data = parseCSV(responseText);
-                updateDashboard(data);
-                errorDisplay.style.display = 'none';
-
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                errorDisplay.textContent = "Error de conexión: " + error.message;
-                errorDisplay.style.display = 'block';
+        // --- EVENT BUS ---
+        class EventBus {
+            constructor() {
+                this.listeners = {};
+            }
+            on(event, callback) {
+                if (!this.listeners[event]) this.listeners[event] = [];
+                this.listeners[event].push(callback);
+            }
+            emit(event, data) {
+                if (this.listeners[event]) {
+                    this.listeners[event].forEach(cb => cb(data));
+                }
             }
         }
+        const bus = new EventBus();
 
-        function parseCSV(csvText) {
-            const lines = csvText.trim().split(/\r\n|\n/);
-            if (lines.length === 0) return [];
-
-            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-
-            // Required columns
-            const idIndex = headers.indexOf('id');
-            const agentIndex = headers.indexOf('agente');
-            const xfersIndex = headers.indexOf('xfers');
-            const cpIndex = headers.indexOf('cp');
-
-            // Robustness check
-            if (idIndex === -1 || agentIndex === -1 || xfersIndex === -1) {
-                throw new Error("Formato CSV incorrecto. Se requieren columnas: ID, Agente, Xfers");
-            }
-            // CP is optional for backwards compatibility, but required by new spec.
-            // If missing, we treat as 0.
-
-            const agents = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                const currentLine = lines[i].split(',');
-                if (currentLine.length < 3) continue;
-
-                const id = currentLine[idIndex].trim();
-                const name = currentLine[agentIndex].trim();
-                const xfers = parseInt(currentLine[xfersIndex].trim()) || 0;
-                let cp = 0;
-                if (cpIndex !== -1) {
-                    cp = parseInt(currentLine[cpIndex].trim()) || 0;
+        // --- DATA SERVICE ---
+        class DataService {
+            async fetchCSV() {
+                try {
+                    const response = await fetch(CONFIG.CSV_URL);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    const text = await response.text();
+                    return this.parseCSV(text);
+                } catch (error) {
+                    console.error("Fetch Error:", error);
+                    return [];
                 }
-
-                // Sorting score: Xfers + (CP * 0.01)
-                const score = xfers + (cp * 0.01);
-
-                agents.push({ id, name, xfers, cp, score });
             }
 
-            return agents;
-        }
+            parseCSV(csvText) {
+                const lines = csvText.trim().split(/\r\n|\n/);
+                if (lines.length < 2) return [];
 
-        function updateDashboard(newAgentsData) {
-            // Process data to handle jitter/fluctuations (Anti-Jitter Logic)
-            const processedAgents = newAgentsData.map(agent => {
-                const prev = previousData[agent.id] || { xfers: 0, cp: 0 };
-
-                let xfers = agent.xfers;
-                let cp = agent.cp;
-
-                // Anti-jitter: prevent value drops unless it's a reset (to 0)
-                if (!isFirstLoad && xfers < prev.xfers && xfers !== 0) {
-                    // console.warn(`Jitter detected for ${agent.name} (Xfers): Received ${xfers}, keeping ${prev.xfers}`);
-                    xfers = prev.xfers;
-                }
-
-                if (!isFirstLoad && cp < prev.cp && cp !== 0) {
-                    // console.warn(`Jitter detected for ${agent.name} (CP): Received ${cp}, keeping ${prev.cp}`);
-                    cp = prev.cp;
-                }
-
-                return {
-                    ...agent,
-                    xfers,
-                    cp,
-                    score: xfers + (cp * 0.01)
+                const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+                const idx = {
+                    id: headers.indexOf('id'),
+                    agent: headers.indexOf('agente'),
+                    xfers: headers.indexOf('xfers'),
+                    cp: headers.indexOf('cp')
                 };
-            });
 
-            // 1. Sort by Score (Xfers DESC, then CP DESC)
-            processedAgents.sort((a, b) => b.score - a.score);
+                if (idx.id === -1 || idx.agent === -1 || idx.xfers === -1) return [];
 
-            // 2. Calculate Total (Only Xfers sum as per requirement)
-            const totalXfers = processedAgents.reduce((sum, agent) => sum + agent.xfers, 0);
-            animateValue(grandTotalEl, parseInt(grandTotalEl.textContent.replace(/,/g, '')) || 0, totalXfers, 1000);
+                return lines.slice(1).map(line => {
+                    const cols = line.split(',');
+                    if (cols.length < 3) return null;
 
-            // 3. Check for Increases
-            checkForChanges(processedAgents);
+                    const xfers = parseInt(cols[idx.xfers]) || 0;
+                    const cp = idx.cp > -1 ? (parseInt(cols[idx.cp]) || 0) : 0;
 
-            // 4. Update Previous Data
-            processedAgents.forEach(agent => {
-                previousData[agent.id] = { xfers: agent.xfers, cp: agent.cp };
-            });
-            isFirstLoad = false;
-
-            // 5. Render Top 52
-            renderGrid(processedAgents.slice(0, 52));
+                    return {
+                        id: cols[idx.id].trim(),
+                        name: cols[idx.agent].trim(),
+                        xfers: xfers,
+                        cp: cp,
+                        // Score for sorting: Primary Xfers, Secondary CP
+                        score: xfers + (cp * 0.001)
+                    };
+                }).filter(a => a !== null);
+            }
         }
 
-        function checkForChanges(agents) {
-            if (isFirstLoad) return;
+        // --- STORE ---
+        class Store {
+            constructor() {
+                this.agents = new Map(); // ID -> AgentData
+                this.topAgents = [];
+                this.totalXfers = 0;
+                this.firstLoad = true;
+            }
 
-            agents.forEach(agent => {
-                const prev = previousData[agent.id] || { xfers: 0, cp: 0 };
+            update(newAgentsList) {
+                const updates = [];
+                let newTotal = 0;
 
-                // Check Xfers (Celebration)
-                if (agent.xfers > prev.xfers) {
-                    const diff = agent.xfers - prev.xfers;
-                    celebrationQueue.push({
-                        name: agent.name,
-                        amount: diff,
-                        type: 'xfer'
-                    });
-                }
+                newAgentsList.forEach(newAgent => {
+                    // Calculate Total
+                    newTotal += newAgent.xfers;
 
-                // Check CP (Visual Feedback only, or add to queue if we want popups for CP too)
-                // User said: "CP needs counters/animations like Xfers."
-                // But usually minor points don't stop the show.
-                // We will add a 'flash' class in the render step if we detect a change here,
-                // but since render is called after this, we need a way to pass that state.
-                // We'll mark the agent object as 'changed_cp' temporarily.
-                if (agent.cp > prev.cp) {
-                    agent.cp_increased = true;
-                }
-            });
-        }
+                    // Logic: Anti-jitter & Change Detection
+                    const prev = this.agents.get(newAgent.id);
 
-        function renderGrid(topAgents) {
-            mainGrid.innerHTML = '';
+                    if (prev) {
+                        // Anti-Jitter: Don't lower value unless reset to 0
+                        if (!this.firstLoad && newAgent.xfers < prev.xfers && newAgent.xfers !== 0) {
+                            newAgent.xfers = prev.xfers;
+                            newAgent.score = newAgent.xfers + (newAgent.cp * 0.001);
+                        }
 
-            // Create 4 columns
-            const columns = [
-                document.createElement('div'),
-                document.createElement('div'),
-                document.createElement('div'),
-                document.createElement('div')
-            ];
-            columns.forEach(col => col.className = 'column');
-
-            // Distribute agents: 13 per column for 52 items
-            const itemsPerCol = Math.ceil(topAgents.length / 4);
-
-            topAgents.forEach((agent, index) => {
-                const rank = index + 1;
-                const colIndex = Math.floor(index / itemsPerCol);
-
-                // Fallback if Math goes weird or 0 items
-                if (colIndex < 4) {
-                    const card = document.createElement('div');
-                    card.className = `agent-card rank-${rank}`;
-
-                    // Add flash effect if CP increased recently
-                    if (agent.cp_increased) {
-                        card.classList.add('flash');
+                        // Detect Increase
+                        if (!this.firstLoad && newAgent.xfers > prev.xfers) {
+                            updates.push({
+                                agent: newAgent,
+                                diff: newAgent.xfers - prev.xfers,
+                                type: 'XFER'
+                            });
+                        } else if (!this.firstLoad && newAgent.cp > prev.cp) {
+                            updates.push({
+                                agent: newAgent,
+                                diff: newAgent.cp - prev.cp,
+                                type: 'CP'
+                            });
+                        }
                     }
 
-                    card.innerHTML = `
-                        <div class="rank">#${rank}</div>
-                        <div class="agent-info">
-                            <div class="agent-name">${agent.name}</div>
-                            <div class="agent-cp">CP: ${agent.cp}</div>
+                    this.agents.set(newAgent.id, newAgent);
+                });
+
+                this.totalXfers = newTotal;
+
+                // Sort & Slice
+                const sorted = Array.from(this.agents.values()).sort((a, b) => b.score - a.score);
+                this.topAgents = sorted.slice(0, CONFIG.TOP_COUNT);
+
+                // Emit Events
+                bus.emit('state-updated', {
+                    topAgents: this.topAgents,
+                    total: this.totalXfers
+                });
+
+                if (updates.length > 0) {
+                    updates.forEach(u => bus.emit('sale-celebration', u));
+                }
+
+                this.firstLoad = false;
+            }
+        }
+
+        // --- RENDERER ---
+        class Renderer {
+            constructor() {
+                this.els = {
+                    total: document.getElementById('ui-total'),
+                    podium: document.getElementById('ui-podium'),
+                    list: document.getElementById('ui-list'),
+                    overlay: document.getElementById('event-overlay'),
+                    overlayAgent: document.getElementById('overlay-agent'),
+                    overlayValue: document.getElementById('overlay-value'),
+                    progress: document.getElementById('progress-bar')
+                };
+
+                this.isCelebrating = false;
+                this.queue = [];
+
+                // Bind methods
+                this.render = this.render.bind(this);
+                this.handleCelebration = this.handleCelebration.bind(this);
+
+                // Subscriptions
+                bus.on('state-updated', this.render);
+                bus.on('sale-celebration', (data) => this.queueCelebration(data));
+
+                // Queue Processor
+                setInterval(() => this.processQueue(), 1000);
+            }
+
+            render({ topAgents, total }) {
+                // Animate Total
+                this.animateNumber(this.els.total, parseInt(this.els.total.innerText), total);
+
+                // Split Data
+                const podiumData = [null, null, null]; // 2, 1, 3 order usually looks best visually, but let's do simple 1,2,3
+                // Actually, standard podium is 2 (left), 1 (center), 3 (right).
+                // Let's map indices: Rank 1 -> index 1. Rank 2 -> index 0. Rank 3 -> index 2.
+
+                if (topAgents[0]) podiumData[1] = { ...topAgents[0], rank: 1 };
+                if (topAgents[1]) podiumData[0] = { ...topAgents[1], rank: 2 };
+                if (topAgents[2]) podiumData[2] = { ...topAgents[2], rank: 3 };
+
+                const listData = topAgents.slice(3);
+
+                // Render Podium
+                this.els.podium.innerHTML = podiumData.map(agent => {
+                    if (!agent) return `<div class="podium-card" style="opacity:0"></div>`;
+                    return `
+                        <div class="podium-card rank-${agent.rank}">
+                            <div class="podium-rank">#${agent.rank}</div>
+                            <div class="podium-name">${agent.name}</div>
+                            <div class="podium-score">${agent.xfers}</div>
+                            <div class="podium-cp">CP: ${agent.cp}</div>
                         </div>
-                        <div class="agent-score">${agent.xfers}</div>
                     `;
-                    columns[colIndex].appendChild(card);
+                }).join('');
+
+                // Render List
+                this.els.list.innerHTML = listData.map((agent, i) => `
+                    <div class="list-card">
+                        <div class="list-rank">#${i + 4}</div>
+                        <div class="list-info">
+                            <div class="list-name">${agent.name}</div>
+                            <div class="list-cp">CP: ${agent.cp}</div>
+                        </div>
+                        <div class="list-score">${agent.xfers}</div>
+                    </div>
+                `).join('');
+            }
+
+            queueCelebration(data) {
+                this.queue.push(data);
+            }
+
+            processQueue() {
+                if (this.isCelebrating || this.queue.length === 0) return;
+                const next = this.queue.shift();
+                this.triggerOverlay(next);
+            }
+
+            triggerOverlay({ agent, diff, type }) {
+                this.isCelebrating = true;
+
+                // Customize text based on type
+                const title = type === 'CP' ? 'CP GAINED' : 'XFER DETECTED';
+                const color = type === 'CP' ? '#bc13fe' : '#00ffff'; // Violet for CP, Cyan for Xfer
+
+                this.els.overlay.querySelector('.event-title').textContent = title;
+                this.els.overlay.querySelector('.event-title').style.color = color;
+                this.els.overlay.querySelector('.event-title').style.borderColor = color;
+
+                this.els.overlayAgent.textContent = agent.name;
+                this.els.overlayValue.textContent = `+${diff}`;
+                this.els.overlayValue.style.color = type === 'CP' ? '#bc13fe' : '#0aff0a';
+
+                this.els.overlay.classList.add('active');
+
+                // Cyberpunk Confetti
+                const duration = 3000;
+                const end = Date.now() + duration;
+
+                (function frame() {
+                    confetti({
+                        particleCount: 3,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 },
+                        colors: ['#ff00ff', '#00ffff']
+                    });
+                    confetti({
+                        particleCount: 3,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 },
+                        colors: ['#ff00ff', '#00ffff']
+                    });
+
+                    if (Date.now() < end) requestAnimationFrame(frame);
+                }());
+
+                setTimeout(() => {
+                    this.els.overlay.classList.remove('active');
+                    this.isCelebrating = false;
+                }, 5000);
+            }
+
+            animateNumber(el, start, end) {
+                if (start === end) return;
+                const duration = 1000;
+                const startTime = performance.now();
+
+                const step = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    // Ease out quart
+                    const ease = 1 - Math.pow(1 - progress, 4);
+
+                    const val = Math.floor(start + (end - start) * ease);
+                    el.innerText = val;
+
+                    if (progress < 1) requestAnimationFrame(step);
+                    else el.innerText = end;
+                };
+                requestAnimationFrame(step);
+            }
+
+            handleCelebration() {
+                // Placeholder if needed for logic extension
+            }
+        }
+
+        // --- MAIN CONTROLLER ---
+        class App {
+            constructor() {
+                this.store = new Store();
+                this.service = new DataService();
+                this.renderer = new Renderer();
+                this.progressBar = document.getElementById('progress-bar');
+            }
+
+            async init() {
+                await this.cycle();
+                this.loop();
+            }
+
+            loop() {
+                let progress = 0;
+                const interval = 100; // Update bar every 100ms
+                const totalTime = CONFIG.FETCH_INTERVAL;
+                const step = 100 / (totalTime / interval);
+
+                const timer = setInterval(() => {
+                    progress += step;
+                    this.progressBar.style.width = `${progress}%`;
+
+                    if (progress >= 100) {
+                        clearInterval(timer);
+                        this.progressBar.style.width = '0%';
+                        this.cycle().then(() => this.loop());
+                    }
+                }, interval);
+            }
+
+            async cycle() {
+                const data = await this.service.fetchCSV();
+                if (data && data.length > 0) {
+                    this.store.update(data);
                 }
-            });
-
-            columns.forEach(col => mainGrid.appendChild(col));
+            }
         }
 
-        // --- CELEBRATION SYSTEM ---
-        function processCelebrationQueue() {
-            setInterval(() => {
-                if (!isCelebrating && celebrationQueue.length > 0) {
-                    const event = celebrationQueue.shift();
-                    triggerCelebration(event);
-                }
-            }, 500);
-        }
-
-        function triggerCelebration(event) {
-            isCelebrating = true;
-
-            celebNameEl.textContent = event.name;
-            celebAmountEl.textContent = event.amount;
-
-            overlay.classList.add('active');
-            fireConfetti();
-
-            setTimeout(() => {
-                overlay.classList.remove('active');
-                isCelebrating = false;
-            }, CELEBRATION_DURATION);
-        }
-
-        function fireConfetti() {
-            const duration = CELEBRATION_DURATION;
-            const end = Date.now() + duration;
-
-            (function frame() {
-                confetti({
-                    particleCount: 5,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: ['#64ffda', '#ffffff', '#0a192f']
-                });
-                confetti({
-                    particleCount: 5,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: ['#64ffda', '#ffffff', '#0a192f']
-                });
-
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
-                }
-            }());
-        }
-
-        // --- UTILS ---
-        function animateValue(obj, start, end, duration) {
-            if (start === end) return;
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                obj.innerHTML = Math.floor(progress * (end - start) + start);
-                if (progress < 1) {
-                    window.requestAnimationFrame(step);
-                } else {
-                    obj.innerHTML = end;
-                }
-            };
-            window.requestAnimationFrame(step);
-        }
-
-        // --- START ---
-        init();
+        // Boot
+        const app = new App();
+        app.init();
 
     </script>
 </body>
 </html>
+
