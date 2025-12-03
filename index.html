@@ -159,10 +159,7 @@
         
         const FETCH_INTERVAL = 3000; 
         let previousData = {}; 
-        let isFirstRun = true; 
-
-        // Configuración del Filtro
-        const PERSISTENCE_THRESHOLD = 3; // Cuantas veces debe repetirse el dato bajo para aceptarlo
+        let isFirstRun = true; // BANDERA DE SEGURIDAD 1
 
         async function init() {
             await fetchData();
@@ -172,16 +169,14 @@
 
         async function fetchData() {
             try {
+                // SEGURIDAD 2: Anti-Caché (Date.now() obliga a descargar datos frescos siempre)
                 const urlConCacheBuster = CSV_URL + '&t=' + Date.now();
+                
                 const response = await fetch(urlConCacheBuster);
                 const text = await response.text();
-                let agents = parseCSV(text);
-                
-                // PASO CLAVE: ESTABILIZACIÓN INTELIGENTE
-                agents = stabilizeData(agents);
-
+                const agents = parseCSV(text);
                 updateDashboard(agents);
-            } catch (err) { console.error("...", err); }
+            } catch (err) { console.error("Conexión inestable...", err); }
         }
 
         function parseCSV(csvText) {
@@ -195,74 +190,25 @@
                 const name = row[1].trim();
                 const xfers = parseInt(row[2]) || 0; 
                 const cp = parseInt(row[4]) || 0;    
-                // Calculamos masterScore DESPUÉS de estabilizar
-                agents.push({ id, name, xfers, cp });
+                const masterScore = xfers + (cp * 0.001);
+
+                agents.push({ id, name, xfers, cp, masterScore });
             }
             return agents;
         }
 
-        // --- FUNCIÓN MAESTRA: FILTRO DE ESTABILIDAD ---
-        function stabilizeData(currentAgents) {
-            if (isFirstRun) return currentAgents;
-
-            return currentAgents.map(agent => {
-                // Si no existe en memoria, inicializamos
-                if (!previousData[agent.id]) {
-                    previousData[agent.id] = { xfers: agent.xfers, cp: agent.cp, glitchCount: 0 };
-                    agent.masterScore = agent.xfers + (agent.cp * 0.001);
-                    return agent;
-                }
-
-                const memory = previousData[agent.id];
-
-                // LÓGICA DE XFERS
-                if (agent.xfers < memory.xfers) {
-                    // CASO 1: REINICIO DE DÍA (Llega un 0)
-                    if (agent.xfers === 0) {
-                        memory.xfers = 0;
-                        memory.glitchCount = 0; // Resetear contador
-                    } 
-                    // CASO 2: POSIBLE GLITCH O CORRECCIÓN
-                    else {
-                        memory.glitchCount = (memory.glitchCount || 0) + 1;
-                        
-                        // Si el dato bajo se repite mucho (es real), lo aceptamos
-                        if (memory.glitchCount >= PERSISTENCE_THRESHOLD) {
-                             memory.xfers = agent.xfers; // Aceptamos la corrección
-                             memory.glitchCount = 0;
-                        } else {
-                             // Si es la primera vez que baja, asumimos error y mantenemos el alto
-                             agent.xfers = memory.xfers; 
-                        }
-                    }
-                } else {
-                    // Si sube o es igual, todo está bien. Reseteamos contadores de sospecha.
-                    if (agent.xfers > memory.xfers) memory.glitchCount = 0;
-                    // Actualizamos memoria
-                    memory.xfers = agent.xfers;
-                }
-
-                // LÓGICA DE CP (Mismo principio simplificado)
-                if (agent.cp < memory.cp) {
-                     if (agent.cp === 0) memory.cp = 0; // Reinicio
-                     else agent.cp = memory.cp; // Ignoramos bajadas de CP por simplicidad (o aplicar lógica glitchCount si desea)
-                } else {
-                    memory.cp = agent.cp;
-                }
-                
-                // Recalcular puntaje con datos estabilizados
-                agent.masterScore = agent.xfers + (agent.cp * 0.001);
-                return agent;
-            });
-        }
-
         function updateDashboard(agents) {
+            // Ordenar
             agents.sort((a, b) => b.masterScore - a.masterScore);
+            
+            // Total Global
             const total = agents.reduce((sum, ag) => sum + ag.xfers, 0);
             document.getElementById('grand-total').innerText = total;
 
+            // Detectar Cambios
             checkChanges(agents);
 
+            // Renderizar Grid (Top 52 - 13 filas x 4 columnas)
             const top52 = agents.slice(0, 52);
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
@@ -298,46 +244,83 @@
             return div;
         }
 
+        // --- LÓGICA DE DETECCIÓN DE CAMBIOS CORREGIDA ---
         let celebQueue = [];
         let isCeleb = false;
 
         function checkChanges(agents) {
+            // SI ES LA PRIMERA CARGA: Solo memorizamos, NO celebramos.
             if (isFirstRun) {
                 agents.forEach(ag => {
-                    // Inicializamos memoria con contador de glitch
-                    previousData[ag.id] = { xfers: ag.xfers, cp: ag.cp, glitchCount: 0 };
+                    previousData[ag.id] = { xfers: ag.xfers, cp: ag.cp };
                 });
-                isFirstRun = false;
-                return;
+                isFirstRun = false; // Bajamos la bandera
+                return; // Salimos de la función sin agregar nada a la cola
             }
 
             agents.forEach(ag => {
-                // Recuperar memoria (ya actualizada por stabilizeData)
-                // Nota: Aquí comparamos contra la versión PREVIA a este ciclo de renderizado
-                // Pero como stabilizeData ya corrió, previousData ya tiene el valor "filtrado".
-                // Para efectos de animación, solo necesitamos saber si SUBIÓ.
+                // Si es un agente nuevo que no estaba en memoria, lo inicializamos en 0
+                const prev = previousData[ag.id] || { xfers: 0, cp: 0 };
                 
-                // Un pequeño truco: necesitamos comparar contra el estado ANTES de stabilizeData
-                // Pero como es complejo mantener dos estados, la lógica simple es:
-                // La animación se dispara sola si el dato renderizado es mayor.
-                // Como stabilizeData actualiza previousData al final, podemos usar variables temporales.
+                // Solo celebramos si el valor NUEVO es MAYOR al anterior
+                if (ag.xfers > prev.xfers) {
+                    celebQueue.push({ name: ag.name, text: '+1 XFER', mainColor: '#64ffda' });
+                }
+                else if (ag.cp > prev.cp) {
+                    celebQueue.push({ name: ag.name, text: '+1 CP', mainColor: '#bd93f9' });
+                }
                 
-                // Simplificación segura:
-                // La función stabilizeData ya actualizó previousData.xfers al valor correcto (alto o bajo aceptado).
-                // Pero para detectar "subida" necesitamos saber si hubo un delta.
-                // Dado que actualizamos previousData en tiempo real, mejor usamos una lógica directa en updateDashboard
-                // o confiamos en que si stabilizeData permitió subir, celebramos.
+                // Actualizamos la memoria
+                previousData[ag.id] = { xfers: ag.xfers, cp: ag.cp };
             });
-            
-            // CORRECCIÓN: La detección de cambios la integramos mejor aquí
-            // Usaremos una "Memoria de Animación" separada para no confundir con la memoria de estabilización
         }
-        
-  
 
+        function processQueue() {
+            setInterval(() => {
+                if (!isCeleb && celebQueue.length > 0) {
+                    let duration = 3000; 
+                    if (celebQueue.length > 5) duration = 500; 
+                    else if (celebQueue.length > 2) duration = 1500; 
+
+                    const event = celebQueue.shift();
+                    triggerCelebration(event, duration);
+                }
+            }, 100);
+        }
+
+        function triggerCelebration(event, duration) {
+            isCeleb = true;
+            const overlay = document.getElementById('celebration-overlay');
+            const nameEl = document.getElementById('celeb-name');
+            const detailEl = document.getElementById('celeb-detail');
+
+            nameEl.innerText = event.name;
+            nameEl.style.color = event.mainColor;
+            nameEl.style.textShadow = `0 0 30px ${event.mainColor}`;
+            detailEl.innerText = event.text;
+            detailEl.style.color = event.mainColor;
+            detailEl.style.borderColor = event.mainColor;
+            detailEl.style.boxShadow = `0 0 20px ${event.mainColor} inset`;
+
+            overlay.classList.add('active');
+            
+            const particleCount = duration < 1000 ? 50 : 150; 
+            confetti({
+                particleCount: particleCount,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: [event.mainColor, '#ffffff'],
+                disableForReducedMotion: true
+            });
+
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                setTimeout(() => { isCeleb = false; }, 100);
+            }, duration);
+        }
+
+        init();
     </script>
-    
-    
     
 </body>
 </html>
