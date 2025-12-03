@@ -169,11 +169,15 @@
 
         async function fetchData() {
             try {
-                // Anti-Caché: Forzamos datos frescos
+                // Anti-Caché
                 const urlConCacheBuster = CSV_URL + '&t=' + Date.now();
                 const response = await fetch(urlConCacheBuster);
                 const text = await response.text();
-                const agents = parseCSV(text);
+                let agents = parseCSV(text);
+                
+                // PASO NUEVO: ESTABILIZAR DATOS (EVITAR PARPADEO)
+                agents = stabilizeData(agents);
+
                 updateDashboard(agents);
             } catch (err) { console.error("...", err); }
         }
@@ -189,24 +193,50 @@
                 const name = row[1].trim();
                 const xfers = parseInt(row[2]) || 0; 
                 const cp = parseInt(row[4]) || 0;    
-                const masterScore = xfers + (cp * 0.001);
-
-                agents.push({ id, name, xfers, cp, masterScore });
+                // Nota: Calcularemos el masterScore después de estabilizar
+                agents.push({ id, name, xfers, cp });
             }
             return agents;
         }
 
+        // --- FUNCIÓN NUEVA: FILTRO DE ESTABILIDAD ---
+        function stabilizeData(currentAgents) {
+            // Si es la primera vez, no tenemos contra qué comparar
+            if (isFirstRun) return currentAgents;
+
+            return currentAgents.map(agent => {
+                const memory = previousData[agent.id];
+                
+                // Si tenemos este agente en memoria
+                if (memory) {
+                    // Si el dato nuevo es MENOR que la memoria (Error de Google),
+                    // forzamos a usar el dato de la memoria (el más alto).
+                    if (agent.xfers < memory.xfers) agent.xfers = memory.xfers;
+                    if (agent.cp < memory.cp) agent.cp = memory.cp;
+                }
+                
+                // Recalculamos el puntaje maestro con los datos estabilizados
+                agent.masterScore = agent.xfers + (agent.cp * 0.001);
+                return agent;
+            });
+        }
+
         function updateDashboard(agents) {
+            // Ordenar
             agents.sort((a, b) => b.masterScore - a.masterScore);
+            
+            // Total Global
             const total = agents.reduce((sum, ag) => sum + ag.xfers, 0);
             document.getElementById('grand-total').innerText = total;
 
+            // Detectar Cambios (Para celebrar)
             checkChanges(agents);
 
-            // GRID TOP 52
+            // Renderizar Grid (Top 52)
             const top52 = agents.slice(0, 52);
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
+            
             const cols = [
                 document.createElement('div'), document.createElement('div'), 
                 document.createElement('div'), document.createElement('div')
@@ -238,7 +268,6 @@
             return div;
         }
 
-        // --- SOLUCIÓN AL PROBLEMA DE REBOTE ---
         let celebQueue = [];
         let isCeleb = false;
 
@@ -252,12 +281,11 @@
             }
 
             agents.forEach(ag => {
-                // Recuperar memoria o iniciar en 0
+                // Si es nuevo, memoria en 0
                 if (!previousData[ag.id]) previousData[ag.id] = { xfers: 0, cp: 0 };
-                
                 const prev = previousData[ag.id];
                 
-                // 1. DETECTAR CELEBRACIÓN (Solo si sube)
+                // Solo celebramos si SUBE
                 if (ag.xfers > prev.xfers) {
                     celebQueue.push({ name: ag.name, text: '+1 XFER', mainColor: '#64ffda' });
                 }
@@ -265,17 +293,8 @@
                     celebQueue.push({ name: ag.name, text: '+1 CP', mainColor: '#bd93f9' });
                 }
                 
-                // 2. ACTUALIZAR MEMORIA (CANDADO ANTI-REBOTE)
-                // Solo actualizamos la memoria si el nuevo número es MAYOR o IGUAL.
-                // Si el servidor envía un número menor (glitch), lo ignoramos en la memoria
-                // para evitar que se dispare la celebración cuando se corrija.
-                
-                if (ag.xfers >= prev.xfers) {
-                    previousData[ag.id].xfers = ag.xfers;
-                }
-                if (ag.cp >= prev.cp) {
-                    previousData[ag.id].cp = ag.cp;
-                }
+                // Actualizamos memoria
+                previousData[ag.id] = { xfers: ag.xfers, cp: ag.cp };
             });
         }
 
@@ -325,6 +344,7 @@
 
         init();
     </script>
+    
     
     
 </body>
