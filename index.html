@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shoreline - Dashboard de Ventas</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0a192f;
+            --accent-color: #64ffda;
+            --secondary-color: #9d4edd; /* Purple for CP */
+            --text-color: #e6f1ff;
+            --glass-bg: rgba(17, 34, 64, 0.7);
+            --glass-border: rgba(100, 255, 218, 0.1);
+            --font-main: 'Montserrat', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            overflow: hidden; /* Prevent scrolling on TV */
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            background: radial-gradient(circle at 50% 50%, #112240 0%, #0a192f 100%);
+        }
+
+        /* --- Header --- */
+        header {
+            height: 100px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            background: rgba(10, 25, 47, 0.9);
+            border-bottom: 1px solid var(--glass-border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-container img {
+            height: 60px;
+            width: auto;
+            filter: drop-shadow(0 0 10px rgba(100, 255, 218, 0.3));
+        }
+
+        .dashboard-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .total-container {
+            text-align: right;
+        }
+
+        .total-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+            color: var(--text-color);
+        }
+
+        .total-value {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            text-shadow: 0 0 15px rgba(100, 255, 218, 0.4);
+            line-height: 1;
+            transition: all 0.5s ease;
+        }
+
+        /* --- Main Content (Grid) --- */
+        main {
+            flex: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 columns */
+            gap: 15px;
+            align-content: start; /* Don't stretch rows */
+            overflow-y: hidden; /* Hide overflow */
+            width: 100%;
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Agent Card */
+        .agent-card {
+            display: flex;
+            align-items: center;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px; /* Slightly smaller radius for denser UI */
+            padding: 8px 15px; /* Compact padding */
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+            position: relative;
+            height: 55px; /* Fixed height for uniformity */
+        }
+
+        .agent-card.flash {
+            animation: flashCard 0.5s ease-out;
+        }
+
+        @keyframes flashCard {
+            0% { background-color: rgba(157, 78, 221, 0.5); }
+            100% { background-color: var(--glass-bg); }
+        }
+
+        .rank {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.3);
+            width: 35px;
+            text-align: left;
+        }
+
+        .agent-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .agent-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        .agent-cp {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--secondary-color); /* Purple */
+            letter-spacing: 0.5px;
+        }
+
+        .agent-score {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            text-align: right;
+            min-width: 40px;
+        }
+
+        /* Top 3 Highlighting */
+        .agent-card.rank-1 { background: rgba(100, 255, 218, 0.10); border-color: var(--accent-color); }
+        .agent-card.rank-2 { background: rgba(100, 255, 218, 0.05); }
+        .agent-card.rank-3 { background: rgba(100, 255, 218, 0.02); }
+
+        .rank-1 .rank { color: #ffd700; }
+        .rank-2 .rank { color: #c0c0c0; }
+        .rank-3 .rank { color: #cd7f32; }
+
+        /* --- Notification Overlay --- */
+        #celebration-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(15px);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none; /* Allow clicking through when hidden */
+            transition: opacity 0.5s ease;
+        }
+
+        #celebration-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .celebration-content {
+            text-align: center;
+            animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .celebration-title {
+            font-size: 3rem;
+            color: #fff;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+
+        .celebration-agent {
+            font-size: 5rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(100, 255, 218, 0.6);
+        }
+
+        .celebration-detail {
+            font-size: 2.5rem;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* Loading State */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--accent-color);
+            font-size: 1.5rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        /* Error Message */
+        .error-msg {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff6b6b;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            display: none;
+            z-index: 200;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <!-- Looks for Shoreline.ico locally -->
+            <img src="Shoreline.ico" alt="Shoreline Logo" onerror="this.style.display='none'">
+            <div class="dashboard-title">Shoreline</div>
+        </div>
+        <div class="total-container">
+            <div class="total-label">Total Xfers</div>
+            <div class="total-value" id="grand-total">0</div>
+        </div>
+    </header>
+
+    <main id="main-grid">
+        <div class="loading">Cargando datos del océano...</div>
+    </main>
+
+    <div id="celebration-overlay">
+        <div class="celebration-content">
+            <div class="celebration-title">¡NUEVA VENTA!</div>
+            <div class="celebration-agent" id="celeb-agent-name">Nombre Agente</div>
+            <div class="celebration-detail">+<span id="celeb-amount">1</span></div>
+        </div>
+    </div>
+
+    <div class="error-msg" id="error-display"></div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv';
+        const FETCH_INTERVAL = 5000; // 5 seconds
+        const CELEBRATION_DURATION = 5000; // 5 seconds
+
+        // --- STATE ---
+        let previousData = {}; // Map: ID -> { xfers: Number, cp: Number }
+        let isFirstLoad = true;
+        let celebrationQueue = [];
+        let isCelebrating = false;
+
+        // --- ELEMENTS ---
+        const mainGrid = document.getElementById('main-grid');
+        const grandTotalEl = document.getElementById('grand-total');
+        const overlay = document.getElementById('celebration-overlay');
+        const celebNameEl = document.getElementById('celeb-agent-name');
+        const celebAmountEl = document.getElementById('celeb-amount');
+        const errorDisplay = document.getElementById('error-display');
+
+        // --- MAIN LOOP ---
+        async function init() {
+            await fetchData();
+            scheduleNextFetch();
+            processCelebrationQueue();
+        }
+
+        function scheduleNextFetch() {
+            setTimeout(async () => {
+                await fetchData();
+                scheduleNextFetch();
+            }, FETCH_INTERVAL);
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch(CSV_URL);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const responseText = await response.text();
+
+                const data = parseCSV(responseText);
+                updateDashboard(data);
+                errorDisplay.style.display = 'none';
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                errorDisplay.textContent = "Error de conexión: " + error.message;
+                errorDisplay.style.display = 'block';
+            }
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split(/\r\n|\n/);
+            if (lines.length === 0) return [];
+
+            const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+            // Required columns
+            const idIndex = headers.indexOf('id');
+            const agentIndex = headers.indexOf('agente');
+            const xfersIndex = headers.indexOf('xfers');
+            const cpIndex = headers.indexOf('cp');
+
+            // Robustness check
+            if (idIndex === -1 || agentIndex === -1 || xfersIndex === -1) {
+                throw new Error("Formato CSV incorrecto. Se requieren columnas: ID, Agente, Xfers");
+            }
+            // CP is optional for backwards compatibility, but required by new spec.
+            // If missing, we treat as 0.
+
+            const agents = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const currentLine = lines[i].split(',');
+                if (currentLine.length < 3) continue;
+
+                const id = currentLine[idIndex].trim();
+                const name = currentLine[agentIndex].trim();
+                const xfers = parseInt(currentLine[xfersIndex].trim()) || 0;
+                let cp = 0;
+                if (cpIndex !== -1) {
+                    cp = parseInt(currentLine[cpIndex].trim()) || 0;
+                }
+
+                // Sorting score: Xfers + (CP * 0.01)
+                const score = xfers + (cp * 0.01);
+
+                agents.push({ id, name, xfers, cp, score });
+            }
+
+            return agents;
+        }
+
+        function updateDashboard(newAgentsData) {
+            // Process data to handle jitter/fluctuations (Anti-Jitter Logic)
+            const processedAgents = newAgentsData.map(agent => {
+                const prev = previousData[agent.id] || { xfers: 0, cp: 0 };
+
+                let xfers = agent.xfers;
+                let cp = agent.cp;
+
+                // Anti-jitter: prevent value drops unless it's a reset (to 0)
+                if (!isFirstLoad && xfers < prev.xfers && xfers !== 0) {
+                    // console.warn(`Jitter detected for ${agent.name} (Xfers): Received ${xfers}, keeping ${prev.xfers}`);
+                    xfers = prev.xfers;
+                }
+
+                if (!isFirstLoad && cp < prev.cp && cp !== 0) {
+                    // console.warn(`Jitter detected for ${agent.name} (CP): Received ${cp}, keeping ${prev.cp}`);
+                    cp = prev.cp;
+                }
+
+                return {
+                    ...agent,
+                    xfers,
+                    cp,
+                    score: xfers + (cp * 0.01)
+                };
+            });
+
+            // 1. Sort by Score (Xfers DESC, then CP DESC)
+            processedAgents.sort((a, b) => b.score - a.score);
+
+            // 2. Calculate Total (Only Xfers sum as per requirement)
+            const totalXfers = processedAgents.reduce((sum, agent) => sum + agent.xfers, 0);
+            animateValue(grandTotalEl, parseInt(grandTotalEl.textContent.replace(/,/g, '')) || 0, totalXfers, 1000);
+
+            // 3. Check for Increases
+            checkForChanges(processedAgents);
+
+            // 4. Update Previous Data
+            processedAgents.forEach(agent => {
+                previousData[agent.id] = { xfers: agent.xfers, cp: agent.cp };
+            });
+            isFirstLoad = false;
+
+            // 5. Render Top 52
+            renderGrid(processedAgents.slice(0, 52));
+        }
+
+        function checkForChanges(agents) {
+            if (isFirstLoad) return;
+
+            agents.forEach(agent => {
+                const prev = previousData[agent.id] || { xfers: 0, cp: 0 };
+
+                // Check Xfers (Celebration)
+                if (agent.xfers > prev.xfers) {
+                    const diff = agent.xfers - prev.xfers;
+                    celebrationQueue.push({
+                        name: agent.name,
+                        amount: diff,
+                        type: 'xfer'
+                    });
+                }
+
+                // Check CP (Visual Feedback only, or add to queue if we want popups for CP too)
+                // User said: "CP needs counters/animations like Xfers."
+                // But usually minor points don't stop the show.
+                // We will add a 'flash' class in the render step if we detect a change here,
+                // but since render is called after this, we need a way to pass that state.
+                // We'll mark the agent object as 'changed_cp' temporarily.
+                if (agent.cp > prev.cp) {
+                    agent.cp_increased = true;
+                }
+            });
+        }
+
+        function renderGrid(topAgents) {
+            mainGrid.innerHTML = '';
+
+            // Create 4 columns
+            const columns = [
+                document.createElement('div'),
+                document.createElement('div'),
+                document.createElement('div'),
+                document.createElement('div')
+            ];
+            columns.forEach(col => col.className = 'column');
+
+            // Distribute agents: 13 per column for 52 items
+            const itemsPerCol = Math.ceil(topAgents.length / 4);
+
+            topAgents.forEach((agent, index) => {
+                const rank = index + 1;
+                const colIndex = Math.floor(index / itemsPerCol);
+
+                // Fallback if Math goes weird or 0 items
+                if (colIndex < 4) {
+                    const card = document.createElement('div');
+                    card.className = `agent-card rank-${rank}`;
+
+                    // Add flash effect if CP increased recently
+                    if (agent.cp_increased) {
+                        card.classList.add('flash');
+                    }
+
+                    card.innerHTML = `
+                        <div class="rank">#${rank}</div>
+                        <div class="agent-info">
+                            <div class="agent-name">${agent.name}</div>
+                            <div class="agent-cp">CP: ${agent.cp}</div>
+                        </div>
+                        <div class="agent-score">${agent.xfers}</div>
+                    `;
+                    columns[colIndex].appendChild(card);
+                }
+            });
+
+            columns.forEach(col => mainGrid.appendChild(col));
+        }
+
+        // --- CELEBRATION SYSTEM ---
+        function processCelebrationQueue() {
+            setInterval(() => {
+                if (!isCelebrating && celebrationQueue.length > 0) {
+                    const event = celebrationQueue.shift();
+                    triggerCelebration(event);
+                }
+            }, 500);
+        }
+
+        function triggerCelebration(event) {
+            isCelebrating = true;
+
+            celebNameEl.textContent = event.name;
+            celebAmountEl.textContent = event.amount;
+
+            overlay.classList.add('active');
+            fireConfetti();
+
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                isCelebrating = false;
+            }, CELEBRATION_DURATION);
+        }
+
+        function fireConfetti() {
+            const duration = CELEBRATION_DURATION;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#64ffda', '#ffffff', '#0a192f']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#64ffda', '#ffffff', '#0a192f']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        // --- UTILS ---
+        function animateValue(obj, start, end, duration) {
+            if (start === end) return;
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    obj.innerHTML = end;
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // --- START ---
+        init();
+
+    </script>
+</body>
+</html>
