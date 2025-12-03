@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEON VERTEX - Sales Dashboard</title>
+    <!-- Google Fonts: Rajdhani for that Tech/Sci-Fi look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --bg-core: #050505;
+            --bg-panel: #111111;
+            --border-color: #333333;
+
+            --neon-pink: #ff00ff;
+            --neon-cyan: #00ffff;
+            --neon-violet: #bc13fe;
+            --neon-green: #0aff0a;
+
+            --text-main: #ffffff;
+            --text-muted: #888888;
+
+            --font-tech: 'Rajdhani', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-core);
+            color: var(--text-main);
+            font-family: var(--font-tech);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background-image:
+                linear-gradient(rgba(5, 5, 5, 0.95), rgba(5, 5, 5, 0.95)),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 1px,
+                    #111 1px,
+                    #111 2px
+                );
+            background-size: 100% 4px;
+        }
+
+        /* --- HEADER --- */
+        header {
+            height: 120px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 50px;
+            border-bottom: 2px solid var(--border-color);
+            background: rgba(17, 17, 17, 0.8);
+            backdrop-filter: blur(5px);
+            position: relative;
+            z-index: 10;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+            box-shadow: 0 0 10px var(--neon-pink);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand img {
+            height: 60px;
+            filter: drop-shadow(0 0 5px var(--neon-cyan));
+        }
+
+        .brand-text {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            background: linear-gradient(to right, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .total-display {
+            text-align: right;
+            position: relative;
+        }
+
+        .total-label {
+            font-size: 1rem;
+            color: var(--neon-cyan);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .total-value {
+            font-size: 4rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 20px var(--neon-pink);
+            line-height: 0.9;
+        }
+
+        /* --- MAIN LAYOUT --- */
+        main {
+            flex: 1;
+            padding: 30px 50px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            overflow: hidden;
+        }
+
+        /* PODIUM (Top 3) */
+        .podium-section {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end; /* Align bottom so #1 stands tall */
+            gap: 30px;
+            height: 35%;
+        }
+
+        .podium-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.5s ease;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            width: 280px;
+        }
+
+        /* Dynamic Heights for Podium */
+        .podium-card.rank-1 { height: 100%; border-color: var(--neon-pink); box-shadow: 0 0 20px rgba(255, 0, 255, 0.2); z-index: 2; }
+        .podium-card.rank-2 { height: 85%; border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 255, 255, 0.15); }
+        .podium-card.rank-3 { height: 75%; border-color: var(--neon-violet); box-shadow: 0 0 15px rgba(188, 19, 254, 0.15); }
+
+        .podium-rank {
+            position: absolute;
+            top: -15px;
+            background: #000;
+            padding: 5px 15px;
+            border: 1px solid currentColor;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px currentColor;
+        }
+        .rank-1 .podium-rank { color: var(--neon-pink); }
+        .rank-2 .podium-rank { color: var(--neon-cyan); }
+        .rank-3 .podium-rank { color: var(--neon-violet); }
+
+        .podium-name {
+            font-size: 1.8rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 10px;
+            padding: 0 10px;
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .podium-score {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .podium-cp {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* GRID (Rank 4-25) */
+        .list-section {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 columns */
+            grid-template-rows: repeat(6, 1fr); /* Up to 6 rows to fit ~24 items */
+            gap: 15px;
+            align-content: start;
+        }
+
+        .list-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            gap: 15px;
+            transition: background 0.3s;
+        }
+
+        .list-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .list-rank {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            width: 30px;
+            text-align: center;
+        }
+
+        .list-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .list-name {
+            font-size: 1.1rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .list-cp {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .list-score {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--neon-green);
+            text-shadow: 0 0 5px rgba(10, 255, 10, 0.3);
+        }
+
+        /* ANIMATIONS */
+        @keyframes flash-neon {
+            0% { background: var(--bg-panel); }
+            50% { background: rgba(255, 0, 255, 0.3); }
+            100% { background: var(--bg-panel); }
+        }
+
+        .flash {
+            animation: flash-neon 0.8s ease-out;
+        }
+
+        /* OVERLAY */
+        #event-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        #event-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .event-box {
+            border: 2px solid var(--neon-pink);
+            background: #000;
+            padding: 40px 80px;
+            text-align: center;
+            box-shadow: 0 0 50px var(--neon-pink), inset 0 0 20px var(--neon-pink);
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #event-overlay.active .event-box {
+            transform: scale(1);
+        }
+
+        .event-title {
+            font-size: 2rem;
+            color: var(--neon-cyan);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--neon-cyan);
+            display: inline-block;
+        }
+
+        .event-agent {
+            font-size: 5rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            margin-bottom: 10px;
+        }
+
+        .event-value {
+            font-size: 3rem;
+            color: var(--neon-green);
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 5px;
+            background: #111;
+        }
+        .status-progress {
+            height: 100%;
+            background: var(--neon-cyan);
+            width: 0%;
+            transition: width 0.5s linear;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <img src="Shoreline.ico" alt="Logo" onerror="this.style.opacity='0'">
+            <div class="brand-text">NEON<span style="color:var(--neon-pink)">VERTEX</span></div>
+        </div>
+        <div class="total-display">
+            <div class="total-label">Mission Total</div>
+            <div class="total-value" id="ui-total">0</div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Top 3 -->
+        <section class="podium-section" id="ui-podium">
+            <!-- Injected by JS -->
+        </section>
+
+        <!-- Rest of List -->
+        <section class="list-section" id="ui-list">
+            <!-- Injected by JS -->
+        </section>
+    </main>
+
+    <div id="event-overlay">
+        <div class="event-box">
+            <div class="event-title">XFER DETECTED</div>
+            <div class="event-agent" id="overlay-agent">AGENT</div>
+            <div class="event-value" id="overlay-value">+1</div>
+        </div>
+    </div>
+
+    <div class="status-bar"><div class="status-progress" id="progress-bar"></div></div>
+
+    <script>
+        /**
+         * APPLICATION ARCHITECTURE
+         * 1. DataService: Handles fetching and CSV parsing.
+         * 2. Store: Manages state (agents, totals) and business logic (sorting, jitter-check).
+         * 3. EventBus: Simple pub/sub for decoupling.
+         * 4. Renderer: Manipulates the DOM based on state.
+         */
+
+        // --- CONSTANTS ---
+        const CONFIG = {
+            CSV_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv',
+            FETCH_INTERVAL: 5000,
+            TOP_COUNT: 25
+        };
+
+        // --- EVENT BUS ---
+        class EventBus {
+            constructor() {
+                this.listeners = {};
+            }
+            on(event, callback) {
+                if (!this.listeners[event]) this.listeners[event] = [];
+                this.listeners[event].push(callback);
+            }
+            emit(event, data) {
+                if (this.listeners[event]) {
+                    this.listeners[event].forEach(cb => cb(data));
+                }
+            }
+        }
+        const bus = new EventBus();
+
+        // --- DATA SERVICE ---
+        class DataService {
+            async fetchCSV() {
+                try {
+                    const response = await fetch(CONFIG.CSV_URL);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    const text = await response.text();
+                    return this.parseCSV(text);
+                } catch (error) {
+                    console.error("Fetch Error:", error);
+                    return [];
+                }
+            }
+
+            parseCSV(csvText) {
+                const lines = csvText.trim().split(/\r\n|\n/);
+                if (lines.length < 2) return [];
+
+                const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+                const idx = {
+                    id: headers.indexOf('id'),
+                    agent: headers.indexOf('agente'),
+                    xfers: headers.indexOf('xfers'),
+                    cp: headers.indexOf('cp')
+                };
+
+                if (idx.id === -1 || idx.agent === -1 || idx.xfers === -1) return [];
+
+                return lines.slice(1).map(line => {
+                    const cols = line.split(',');
+                    if (cols.length < 3) return null;
+
+                    const xfers = parseInt(cols[idx.xfers]) || 0;
+                    const cp = idx.cp > -1 ? (parseInt(cols[idx.cp]) || 0) : 0;
+
+                    return {
+                        id: cols[idx.id].trim(),
+                        name: cols[idx.agent].trim(),
+                        xfers: xfers,
+                        cp: cp,
+                        // Score for sorting: Primary Xfers, Secondary CP
+                        score: xfers + (cp * 0.001)
+                    };
+                }).filter(a => a !== null);
+            }
+        }
+
+        // --- STORE ---
+        class Store {
+            constructor() {
+                this.agents = new Map(); // ID -> AgentData
+                this.topAgents = [];
+                this.totalXfers = 0;
+                this.firstLoad = true;
+            }
+
+            update(newAgentsList) {
+                const updates = [];
+                let newTotal = 0;
+
+                newAgentsList.forEach(newAgent => {
+                    // Calculate Total
+                    newTotal += newAgent.xfers;
+
+                    // Logic: Anti-jitter & Change Detection
+                    const prev = this.agents.get(newAgent.id);
+
+                    if (prev) {
+                        // Anti-Jitter: Don't lower value unless reset to 0
+                        if (!this.firstLoad && newAgent.xfers < prev.xfers && newAgent.xfers !== 0) {
+                            newAgent.xfers = prev.xfers;
+                            newAgent.score = newAgent.xfers + (newAgent.cp * 0.001);
+                        }
+
+                        // Detect Increase
+                        if (!this.firstLoad && newAgent.xfers > prev.xfers) {
+                            updates.push({
+                                agent: newAgent,
+                                diff: newAgent.xfers - prev.xfers,
+                                type: 'XFER'
+                            });
+                        } else if (!this.firstLoad && newAgent.cp > prev.cp) {
+                            updates.push({
+                                agent: newAgent,
+                                diff: newAgent.cp - prev.cp,
+                                type: 'CP'
+                            });
+                        }
+                    }
+
+                    this.agents.set(newAgent.id, newAgent);
+                });
+
+                this.totalXfers = newTotal;
+
+                // Sort & Slice
+                const sorted = Array.from(this.agents.values()).sort((a, b) => b.score - a.score);
+                this.topAgents = sorted.slice(0, CONFIG.TOP_COUNT);
+
+                // Emit Events
+                bus.emit('state-updated', {
+                    topAgents: this.topAgents,
+                    total: this.totalXfers
+                });
+
+                if (updates.length > 0) {
+                    updates.forEach(u => bus.emit('sale-celebration', u));
+                }
+
+                this.firstLoad = false;
+            }
+        }
+
+        // --- RENDERER ---
+        class Renderer {
+            constructor() {
+                this.els = {
+                    total: document.getElementById('ui-total'),
+                    podium: document.getElementById('ui-podium'),
+                    list: document.getElementById('ui-list'),
+                    overlay: document.getElementById('event-overlay'),
+                    overlayAgent: document.getElementById('overlay-agent'),
+                    overlayValue: document.getElementById('overlay-value'),
+                    progress: document.getElementById('progress-bar')
+                };
+
+                this.isCelebrating = false;
+                this.queue = [];
+
+                // Bind methods
+                this.render = this.render.bind(this);
+                this.handleCelebration = this.handleCelebration.bind(this);
+
+                // Subscriptions
+                bus.on('state-updated', this.render);
+                bus.on('sale-celebration', (data) => this.queueCelebration(data));
+
+                // Queue Processor
+                setInterval(() => this.processQueue(), 1000);
+            }
+
+            render({ topAgents, total }) {
+                // Animate Total
+                this.animateNumber(this.els.total, parseInt(this.els.total.innerText), total);
+
+                // Split Data
+                const podiumData = [null, null, null]; // 2, 1, 3 order usually looks best visually, but let's do simple 1,2,3
+                // Actually, standard podium is 2 (left), 1 (center), 3 (right).
+                // Let's map indices: Rank 1 -> index 1. Rank 2 -> index 0. Rank 3 -> index 2.
+
+                if (topAgents[0]) podiumData[1] = { ...topAgents[0], rank: 1 };
+                if (topAgents[1]) podiumData[0] = { ...topAgents[1], rank: 2 };
+                if (topAgents[2]) podiumData[2] = { ...topAgents[2], rank: 3 };
+
+                const listData = topAgents.slice(3);
+
+                // Render Podium
+                this.els.podium.innerHTML = podiumData.map(agent => {
+                    if (!agent) return `<div class="podium-card" style="opacity:0"></div>`;
+                    return `
+                        <div class="podium-card rank-${agent.rank}">
+                            <div class="podium-rank">#${agent.rank}</div>
+                            <div class="podium-name">${agent.name}</div>
+                            <div class="podium-score">${agent.xfers}</div>
+                            <div class="podium-cp">CP: ${agent.cp}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Render List
+                this.els.list.innerHTML = listData.map((agent, i) => `
+                    <div class="list-card">
+                        <div class="list-rank">#${i + 4}</div>
+                        <div class="list-info">
+                            <div class="list-name">${agent.name}</div>
+                            <div class="list-cp">CP: ${agent.cp}</div>
+                        </div>
+                        <div class="list-score">${agent.xfers}</div>
+                    </div>
+                `).join('');
+            }
+
+            queueCelebration(data) {
+                this.queue.push(data);
+            }
+
+            processQueue() {
+                if (this.isCelebrating || this.queue.length === 0) return;
+                const next = this.queue.shift();
+                this.triggerOverlay(next);
+            }
+
+            triggerOverlay({ agent, diff, type }) {
+                this.isCelebrating = true;
+
+                // Customize text based on type
+                const title = type === 'CP' ? 'CP GAINED' : 'XFER DETECTED';
+                const color = type === 'CP' ? '#bc13fe' : '#00ffff'; // Violet for CP, Cyan for Xfer
+
+                this.els.overlay.querySelector('.event-title').textContent = title;
+                this.els.overlay.querySelector('.event-title').style.color = color;
+                this.els.overlay.querySelector('.event-title').style.borderColor = color;
+
+                this.els.overlayAgent.textContent = agent.name;
+                this.els.overlayValue.textContent = `+${diff}`;
+                this.els.overlayValue.style.color = type === 'CP' ? '#bc13fe' : '#0aff0a';
+
+                this.els.overlay.classList.add('active');
+
+                // Cyberpunk Confetti
+                const duration = 3000;
+                const end = Date.now() + duration;
+
+                (function frame() {
+                    confetti({
+                        particleCount: 3,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 },
+                        colors: ['#ff00ff', '#00ffff']
+                    });
+                    confetti({
+                        particleCount: 3,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 },
+                        colors: ['#ff00ff', '#00ffff']
+                    });
+
+                    if (Date.now() < end) requestAnimationFrame(frame);
+                }());
+
+                setTimeout(() => {
+                    this.els.overlay.classList.remove('active');
+                    this.isCelebrating = false;
+                }, 5000);
+            }
+
+            animateNumber(el, start, end) {
+                if (start === end) return;
+                const duration = 1000;
+                const startTime = performance.now();
+
+                const step = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    // Ease out quart
+                    const ease = 1 - Math.pow(1 - progress, 4);
+
+                    const val = Math.floor(start + (end - start) * ease);
+                    el.innerText = val;
+
+                    if (progress < 1) requestAnimationFrame(step);
+                    else el.innerText = end;
+                };
+                requestAnimationFrame(step);
+            }
+
+            handleCelebration() {
+                // Placeholder if needed for logic extension
+            }
+        }
+
+        // --- MAIN CONTROLLER ---
+        class App {
+            constructor() {
+                this.store = new Store();
+                this.service = new DataService();
+                this.renderer = new Renderer();
+                this.progressBar = document.getElementById('progress-bar');
+            }
+
+            async init() {
+                await this.cycle();
+                this.loop();
+            }
+
+            loop() {
+                let progress = 0;
+                const interval = 100; // Update bar every 100ms
+                const totalTime = CONFIG.FETCH_INTERVAL;
+                const step = 100 / (totalTime / interval);
+
+                const timer = setInterval(() => {
+                    progress += step;
+                    this.progressBar.style.width = `${progress}%`;
+
+                    if (progress >= 100) {
+                        clearInterval(timer);
+                        this.progressBar.style.width = '0%';
+                        this.cycle().then(() => this.loop());
+                    }
+                }, interval);
+            }
+
+            async cycle() {
+                const data = await this.service.fetchCSV();
+                if (data && data.length > 0) {
+                    this.store.update(data);
+                }
+            }
+        }
+
+        // Boot
+        const app = new App();
+        app.init();
+
+    </script>
+</body>
+</html>
