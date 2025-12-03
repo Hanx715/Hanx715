@@ -154,19 +154,14 @@
     </div>
 
 <script>
-        // --- URL CSV ---
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv';
-        
         const FETCH_INTERVAL = 3000; 
         
-        // Memoria del sistema
         let memory = {}; 
         let isFirstRun = true; 
         let celebQueue = [];
         let isCeleb = false;
-        
-        // Cuantas veces debe repetirse un dato bajo para aceptarlo como corrección (aprox 9 segs)
-        const PERSISTENCE_THRESHOLD = 3; 
+        const PERSISTENCE_THRESHOLD = 4; // Aumentado a 4 para ser más tolerante a glitches largos
 
         async function init() {
             await fetchData();
@@ -179,14 +174,11 @@
                 const url = CSV_URL + '&t=' + Date.now();
                 const response = await fetch(url);
                 const text = await response.text();
-                
-                // Procesamos y Estabilizamos los datos antes de pintar
                 const agents = processData(text); 
                 updateDashboard(agents);
             } catch (err) { console.error("...", err); }
         }
 
-        // Esta función hace TODO: Parsear, Estabilizar y Encolar Animaciones
         function processData(csvText) {
             const lines = csvText.trim().split(/\r\n|\n/);
             const agents = [];
@@ -197,68 +189,73 @@
 
                 const id = row[0].trim();
                 const name = row[1].trim();
-                // Leemos los datos crudos que llegan de Google
-                let rawXfers = parseInt(row[2]) || 0; 
-                let rawCp = parseInt(row[4]) || 0;    
+                let xfers = parseInt(row[2]) || 0; 
+                let cp = parseInt(row[4]) || 0;    
 
-                // --- LÓGICA DE ESTABILIZACIÓN ---
+                // Inicializar memoria si es nuevo
                 if (!memory[id]) {
-                    // Si es nuevo, lo guardamos en memoria
-                    memory[id] = { xfers: rawXfers, cp: rawCp, glitchCount: 0 };
+                    memory[id] = { 
+                        xfers: xfers, 
+                        cp: cp, 
+                        highestXfers: xfers, // Récord histórico de hoy
+                        highestCp: cp,       // Récord histórico de hoy
+                        glitchCount: 0 
+                    };
                 } 
                 
                 const mem = memory[id];
 
-                // 1. MANEJO INTELIGENTE DE XFERS
-                if (rawXfers < mem.xfers) {
-                    // --> EL NÚMERO BAJÓ
-                    if (rawXfers === 0) {
-                        // CASO A: Reinicio de día (Aceptar inmediato)
-                        mem.xfers = 0; 
+                // --- 1. LÓGICA DE ESTABILIZACIÓN (Anti-Parpadeo) ---
+                if (xfers < mem.xfers) {
+                    if (xfers === 0) {
+                        // Reinicio de día: Resetear todo
+                        mem.xfers = 0;
+                        mem.highestXfers = 0; // Importante: Bajar el récord también
                         mem.glitchCount = 0;
                     } else {
-                        // CASO B: Posible error de servidor o corrección manual
+                        // Bajada sospechosa
                         mem.glitchCount++;
                         if (mem.glitchCount >= PERSISTENCE_THRESHOLD) {
-                            // Persistió el dato bajo: Es corrección real -> Aceptar
-                            mem.xfers = rawXfers;
+                            mem.xfers = xfers; // Aceptamos la bajada tras mucha insistencia
                             mem.glitchCount = 0;
                         } else {
-                            // Es un parpadeo fugaz: IGNORAR y usar memoria (dato alto)
-                            // Esto evita que la barra baje y vuelva a subir
-                            rawXfers = mem.xfers; 
+                            xfers = mem.xfers; // Falso positivo, mantenemos el alto
                         }
                     }
-                } else if (rawXfers > mem.xfers) {
-                    // --> EL NÚMERO SUBIÓ (Venta real)
+                } else {
+                    // Subida o Igual
+                    mem.xfers = xfers;
+                    mem.glitchCount = 0;
+                }
+
+                // CP Estabilización simple
+                if (cp < mem.cp) {
+                     if (cp === 0) { mem.cp = 0; mem.highestCp = 0; }
+                     else cp = mem.cp;
+                } else {
+                    mem.cp = cp;
+                }
+
+                // --- 2. LÓGICA DE CELEBRACIÓN (Anti-Repetición) ---
+                // Solo celebramos si el número actual supera el "Récord Histórico" de la sesión
+                
+                if (xfers > mem.highestXfers) {
                     if (!isFirstRun) {
                         celebQueue.push({ name: name, text: '+1 XFER', mainColor: '#64ffda' });
                     }
-                    mem.xfers = rawXfers;
-                    mem.glitchCount = 0; // Resetear contador de errores
-                } else {
-                    // --> EL NÚMERO ES IGUAL
-                    mem.glitchCount = 0; // Si volvió al dato alto, era un glitch, reseteamos sospecha
+                    mem.highestXfers = xfers; // Actualizamos el nuevo récord
                 }
 
-                // 2. MANEJO DE CP (Simplificado)
-                if (rawCp > mem.cp) {
+                if (cp > mem.highestCp) {
                     if (!isFirstRun) {
                         celebQueue.push({ name: name, text: '+1 CP', mainColor: '#bd93f9' });
                     }
-                    mem.cp = rawCp;
-                } else if (rawCp < mem.cp) {
-                     if (rawCp === 0) mem.cp = 0; // Reinicio
-                     else rawCp = mem.cp; // Ignorar bajadas leves para estabilidad
+                    mem.highestCp = cp; // Actualizamos el nuevo récord
                 }
 
-                // Usamos los datos ESTABILIZADOS (mem.xfers/mem.cp o rawXfers corregido) para el ranking
-                const finalXfers = mem.xfers; 
-                const finalCp = mem.cp;
-                
-                // Calcular Puntaje
-                const masterScore = finalXfers + (finalCp * 0.001);
-                agents.push({ id, name, xfers: finalXfers, cp: finalCp, masterScore });
+                // Calcular Puntaje Maestro
+                const masterScore = mem.xfers + (mem.cp * 0.001);
+                agents.push({ id, name, xfers: mem.xfers, cp: mem.cp, masterScore });
             }
             
             if (isFirstRun) isFirstRun = false;
@@ -270,6 +267,7 @@
             const total = agents.reduce((sum, ag) => sum + ag.xfers, 0);
             document.getElementById('grand-total').innerText = total;
 
+            // Top 52
             const top52 = agents.slice(0, 52);
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
@@ -351,6 +349,7 @@
 
         init();
     </script>
+    
     
     
 </body>
