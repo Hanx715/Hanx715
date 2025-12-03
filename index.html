@@ -153,6 +153,7 @@
         <div class="celeb-detail" id="celeb-detail">+1</div>
     </div>
 
+
 <script>
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv';
         const FETCH_INTERVAL = 3000; 
@@ -161,7 +162,9 @@
         let isFirstRun = true; 
         let celebQueue = [];
         let isCeleb = false;
-        const PERSISTENCE_THRESHOLD = 4; // Aumentado a 4 para ser más tolerante a glitches largos
+        
+        // Umbral de paciencia para errores (aprox 12 segs)
+        const PERSISTENCE_THRESHOLD = 4; 
 
         async function init() {
             await fetchData();
@@ -192,65 +195,84 @@
                 let xfers = parseInt(row[2]) || 0; 
                 let cp = parseInt(row[4]) || 0;    
 
-                // Inicializar memoria si es nuevo
+                // Inicializar memoria COMPLETA si es nuevo
                 if (!memory[id]) {
                     memory[id] = { 
                         xfers: xfers, 
                         cp: cp, 
-                        highestXfers: xfers, // Récord histórico de hoy
-                        highestCp: cp,       // Récord histórico de hoy
-                        glitchCount: 0 
+                        highestXfers: xfers, // Récord Xfer
+                        highestCp: cp,       // Récord CP
+                        glitchCountXfer: 0,  // Contador de error Xfer
+                        glitchCountCp: 0     // Contador de error CP (NUEVO)
                     };
                 } 
                 
                 const mem = memory[id];
 
-                // --- 1. LÓGICA DE ESTABILIZACIÓN (Anti-Parpadeo) ---
+                // ==========================================
+                // 1. BLINDAJE DE XFERS (Lógica Robusta)
+                // ==========================================
                 if (xfers < mem.xfers) {
                     if (xfers === 0) {
-                        // Reinicio de día: Resetear todo
                         mem.xfers = 0;
-                        mem.highestXfers = 0; // Importante: Bajar el récord también
-                        mem.glitchCount = 0;
+                        mem.highestXfers = 0; 
+                        mem.glitchCountXfer = 0;
                     } else {
-                        // Bajada sospechosa
-                        mem.glitchCount++;
-                        if (mem.glitchCount >= PERSISTENCE_THRESHOLD) {
-                            mem.xfers = xfers; // Aceptamos la bajada tras mucha insistencia
-                            mem.glitchCount = 0;
+                        mem.glitchCountXfer++;
+                        if (mem.glitchCountXfer >= PERSISTENCE_THRESHOLD) {
+                            mem.xfers = xfers; 
+                            mem.glitchCountXfer = 0;
                         } else {
-                            xfers = mem.xfers; // Falso positivo, mantenemos el alto
+                            xfers = mem.xfers; // Ignorar bajada
                         }
                     }
                 } else {
-                    // Subida o Igual
                     mem.xfers = xfers;
-                    mem.glitchCount = 0;
+                    mem.glitchCountXfer = 0;
                 }
 
-                // CP Estabilización simple
+                // ==========================================
+                // 2. BLINDAJE DE CP (AHORA IGUAL DE ROBUSTO)
+                // ==========================================
                 if (cp < mem.cp) {
-                     if (cp === 0) { mem.cp = 0; mem.highestCp = 0; }
-                     else cp = mem.cp;
+                    if (cp === 0) {
+                        // Reinicio de día para CP
+                        mem.cp = 0;
+                        mem.highestCp = 0; 
+                        mem.glitchCountCp = 0;
+                    } else {
+                        // Bajada sospechosa de CP
+                        mem.glitchCountCp++;
+                        if (mem.glitchCountCp >= PERSISTENCE_THRESHOLD) {
+                            mem.cp = cp; // Aceptamos la corrección
+                            mem.glitchCountCp = 0;
+                        } else {
+                            cp = mem.cp; // Falso positivo, mantenemos el alto
+                        }
+                    }
                 } else {
+                    // Subida o Igualdad de CP
                     mem.cp = cp;
+                    mem.glitchCountCp = 0;
                 }
 
-                // --- 2. LÓGICA DE CELEBRACIÓN (Anti-Repetición) ---
-                // Solo celebramos si el número actual supera el "Récord Histórico" de la sesión
+                // ==========================================
+                // 3. LÓGICA DE CELEBRACIÓN (Anti-Repetición)
+                // ==========================================
                 
+                // Solo celebramos si supera el RÉCORD HISTÓRICO
                 if (xfers > mem.highestXfers) {
                     if (!isFirstRun) {
                         celebQueue.push({ name: name, text: '+1 XFER', mainColor: '#64ffda' });
                     }
-                    mem.highestXfers = xfers; // Actualizamos el nuevo récord
+                    mem.highestXfers = xfers; 
                 }
 
                 if (cp > mem.highestCp) {
                     if (!isFirstRun) {
                         celebQueue.push({ name: name, text: '+1 CP', mainColor: '#bd93f9' });
                     }
-                    mem.highestCp = cp; // Actualizamos el nuevo récord
+                    mem.highestCp = cp; // Actualizamos el récord de CP
                 }
 
                 // Calcular Puntaje Maestro
@@ -323,33 +345,7 @@
             const detailEl = document.getElementById('celeb-detail');
 
             nameEl.innerText = event.name;
-            nameEl.style.color = event.mainColor;
-            nameEl.style.textShadow = `0 0 30px ${event.mainColor}`;
-            detailEl.innerText = event.text;
-            detailEl.style.color = event.mainColor;
-            detailEl.style.borderColor = event.mainColor;
-            detailEl.style.boxShadow = `0 0 20px ${event.mainColor} inset`;
-
-            overlay.classList.add('active');
-            
-            const particleCount = duration < 1000 ? 50 : 150; 
-            confetti({
-                particleCount: particleCount,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: [event.mainColor, '#ffffff'],
-                disableForReducedMotion: true
-            });
-
-            setTimeout(() => {
-                overlay.classList.remove('active');
-                setTimeout(() => { isCeleb = false; }, 100);
-            }, duration);
-        }
-
-        init();
-    </script>
-    
+            nameEl.style.    
     
     
 </body>
