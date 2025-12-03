@@ -154,6 +154,7 @@
     </div>
 
 <script>
+        // --- CONFIGURACIÓN ---
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTS1nf-eEnd7l97a4WG0iXGQn_kqtc8kAkcSXUDiyMtoeXzLo-tmtycUl-cKFDjK2qaTi5JRanbWqG/pub?gid=0&single=true&output=csv';
         const FETCH_INTERVAL = 3000; 
         
@@ -161,7 +162,9 @@
         let isFirstRun = true; 
         let celebQueue = [];
         let isCeleb = false;
-        const PERSISTENCE_THRESHOLD = 4; // Aumentado a 4 para ser más tolerante a glitches largos
+        
+        // Umbral de paciencia (4 intentos = aprox 12 segundos antes de aceptar una bajada)
+        const PERSISTENCE_THRESHOLD = 4; 
 
         async function init() {
             await fetchData();
@@ -171,9 +174,13 @@
 
         async function fetchData() {
             try {
+                // Anti-Caché
                 const url = CSV_URL + '&t=' + Date.now();
                 const response = await fetch(url);
                 const text = await response.text();
+                
+                if (text.trim().startsWith("<!DOCTYPE")) { console.error("Error CSV"); return; }
+                
                 const agents = processData(text); 
                 updateDashboard(agents);
             } catch (err) { console.error("...", err); }
@@ -192,68 +199,73 @@
                 let xfers = parseInt(row[2]) || 0; 
                 let cp = parseInt(row[4]) || 0;    
 
-                // Inicializar memoria si es nuevo
+                // Inicializar memoria COMPLETA
                 if (!memory[id]) {
                     memory[id] = { 
                         xfers: xfers, 
                         cp: cp, 
-                        highestXfers: xfers, // Récord histórico de hoy
-                        highestCp: cp,       // Récord histórico de hoy
-                        glitchCount: 0 
+                        highestXfers: xfers, // Récord Histórico Xfer
+                        highestCp: cp,       // Récord Histórico CP
+                        glitchCountXfer: 0,  
+                        glitchCountCp: 0     
                     };
                 } 
                 
                 const mem = memory[id];
 
-                // --- 1. LÓGICA DE ESTABILIZACIÓN (Anti-Parpadeo) ---
+                // ----------------------------------------------------
+                // 1. BLINDAJE DE XFERS (Estabilización)
+                // ----------------------------------------------------
                 if (xfers < mem.xfers) {
-                    if (xfers === 0) {
-                        // Reinicio de día: Resetear todo
-                        mem.xfers = 0;
-                        mem.highestXfers = 0; // Importante: Bajar el récord también
-                        mem.glitchCount = 0;
-                    } else {
-                        // Bajada sospechosa
-                        mem.glitchCount++;
-                        if (mem.glitchCount >= PERSISTENCE_THRESHOLD) {
-                            mem.xfers = xfers; // Aceptamos la bajada tras mucha insistencia
-                            mem.glitchCount = 0;
+                    if (xfers === 0) { // Reinicio
+                        mem.xfers = 0; mem.highestXfers = 0; mem.glitchCountXfer = 0; 
+                    } else { // Bajada sospechosa
+                        mem.glitchCountXfer++;
+                        if (mem.glitchCountXfer >= PERSISTENCE_THRESHOLD) {
+                            mem.xfers = xfers; mem.glitchCountXfer = 0; // Aceptar
                         } else {
-                            xfers = mem.xfers; // Falso positivo, mantenemos el alto
+                            xfers = mem.xfers; // Ignorar (Mantener alto)
                         }
                     }
                 } else {
-                    // Subida o Igual
-                    mem.xfers = xfers;
-                    mem.glitchCount = 0;
+                    mem.xfers = xfers; mem.glitchCountXfer = 0;
                 }
 
-                // CP Estabilización simple
+                // ----------------------------------------------------
+                // 2. BLINDAJE DE CP (AQUÍ ESTÁ LA CORRECCIÓN)
+                // ----------------------------------------------------
                 if (cp < mem.cp) {
-                     if (cp === 0) { mem.cp = 0; mem.highestCp = 0; }
-                     else cp = mem.cp;
+                    if (cp === 0) { // Reinicio
+                        mem.cp = 0; mem.highestCp = 0; mem.glitchCountCp = 0; 
+                    } else { // Bajada sospechosa
+                        mem.glitchCountCp++;
+                        if (mem.glitchCountCp >= PERSISTENCE_THRESHOLD) {
+                            mem.cp = cp; mem.glitchCountCp = 0; // Aceptar
+                        } else {
+                            cp = mem.cp; // Ignorar (Mantener alto)
+                        }
+                    }
                 } else {
-                    mem.cp = cp;
+                    mem.cp = cp; mem.glitchCountCp = 0;
                 }
 
-                // --- 2. LÓGICA DE CELEBRACIÓN (Anti-Repetición) ---
-                // Solo celebramos si el número actual supera el "Récord Histórico" de la sesión
+                // ----------------------------------------------------
+                // 3. LÓGICA DE CELEBRACIÓN (CANDADO ANTI-REPETICIÓN)
+                // ----------------------------------------------------
                 
-                if (xfers > mem.highestXfers) {
-                    if (!isFirstRun) {
-                        celebQueue.push({ name: name, text: '+1 XFER', mainColor: '#64ffda' });
-                    }
-                    mem.highestXfers = xfers; // Actualizamos el nuevo récord
+                // XFERS: Solo celebra si supera el récord histórico
+                if (mem.xfers > mem.highestXfers) {
+                    if (!isFirstRun) celebQueue.push({ name: name, text: '+1 XFER', mainColor: '#64ffda' });
+                    mem.highestXfers = mem.xfers; 
                 }
 
-                if (cp > mem.highestCp) {
-                    if (!isFirstRun) {
-                        celebQueue.push({ name: name, text: '+1 CP', mainColor: '#bd93f9' });
-                    }
-                    mem.highestCp = cp; // Actualizamos el nuevo récord
+                // CP: Solo celebra si supera el récord histórico (ESTO PREVIENE EL ERROR)
+                if (mem.cp > mem.highestCp) {
+                    if (!isFirstRun) celebQueue.push({ name: name, text: '+1 CP', mainColor: '#bd93f9' });
+                    mem.highestCp = mem.cp; 
                 }
 
-                // Calcular Puntaje Maestro
+                // Puntaje Maestro
                 const masterScore = mem.xfers + (mem.cp * 0.001);
                 agents.push({ id, name, xfers: mem.xfers, cp: mem.cp, masterScore });
             }
@@ -267,22 +279,19 @@
             const total = agents.reduce((sum, ag) => sum + ag.xfers, 0);
             document.getElementById('grand-total').innerText = total;
 
-            // Top 52
-            const top52 = agents.slice(0, 52);
+            // TOP 60
+            const top60 = agents.slice(0, 60);
             const grid = document.getElementById('main-grid');
             grid.innerHTML = '';
             
-            const cols = [
-                document.createElement('div'), document.createElement('div'), 
-                document.createElement('div'), document.createElement('div')
-            ];
+            const cols = [document.createElement('div'), document.createElement('div'), document.createElement('div'), document.createElement('div')];
             cols.forEach(c => { c.className = 'column'; grid.appendChild(c); });
 
-            top52.forEach((agent, i) => {
+            top60.forEach((agent, i) => {
                 const card = createCard(agent, i + 1);
-                if (i < 13) cols[0].appendChild(card);
-                else if (i < 26) cols[1].appendChild(card);
-                else if (i < 39) cols[2].appendChild(card);
+                if (i < 15) cols[0].appendChild(card);
+                else if (i < 30) cols[1].appendChild(card);
+                else if (i < 45) cols[2].appendChild(card);
                 else cols[3].appendChild(card);
             });
         }
@@ -349,6 +358,7 @@
 
         init();
     </script>
+    
     
     
     
