@@ -139,10 +139,8 @@
           overflow:hidden; display:grid; place-items:center; font-weight:800; font-size:85%; }
   .spark .f{ position:absolute; left:0; top:0; bottom:0; width:0%; background:linear-gradient(90deg, rgba(255,255,255,.75), rgba(255,255,255,.15)); transition:width .6s ease; }
 
-  #meta{ display:flex;justify-content:space-between;align-items:center; font-weight:800; font-size:calc(1.5*var(--vh)); }
-  .dots{ display:flex; gap:8px; align-items:center; }
-  .dot{ width:8px; height:8px; border-radius:999px; background:rgba(255,255,255,.4); opacity:.55; }
-  .dot.on{ opacity:1; background:var(--neon-blue); box-shadow:0 0 8px var(--neon-blue); }
+  #meta{ display:flex;justify-content:flex-start;align-items:center; font-weight:800; font-size:calc(1.5*var(--vh)); }
+  /* .dots y .dot eliminados */
 
   /* ===== Medal styles (Adaptadas a Dark Neon) ===== */
   .medal{
@@ -252,7 +250,7 @@
 
   <div id='meta'>
     <div id='diag'>Loading…</div>
-    <div class='dots' id='dots'></div>
+    <!-- Los indicadores de página han sido eliminados para habilitar el scroll infinito -->
   </div>
 </div>
 
@@ -280,12 +278,11 @@ const WEEKLY_SHEETID = "1xNrDZ6uXUS0XMU3033SALOPPORgyjQomH68W2GyTAUo";
 const DAILY_ID_RAW   = "1MeGKl3Qok84NymsXnuHuA4reL_l9Y1SqqLuejIMeaUA";
 
 const TIMEZONE       = "America/Tijuana";
-const PAGE_SIZE      = 10;
-const PAGE_MS        = 45000;
 const DAILY_REFRESH  = 12000;          // refresco más frecuente
 const WEEKLY_REFRESH = 5*60*1000;
 
-let ALL_DATA=[]; let PAGE_INDEX=0;
+let ALL_DATA=[]; 
+// Variables de paginación eliminadas (PAGE_SIZE, PAGE_MS, PAGE_INDEX)
 let PREV_T=new Map(), PREV_R=new Map(), INITIALIZED=false;
 
 function diag(t, cls){ document.getElementById('diag').innerHTML = `<span class="${cls||''}">${t}</span>`; }
@@ -293,7 +290,7 @@ function setChipWeekly(t){ document.getElementById('chipWeekly').textContent = `
 function setChipDaily(t){ document.getElementById('chipDaily').textContent = `Daily: ${t}`; }
 function getLocalDate(){ const s=new Date().toLocaleString('en-US',{timeZone:TIMEZONE}); return new Date(s); }
 function isoWeek(d){ const x=new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n=x.getUTCDay()||7; x.setUTCDate(x.getUTCDate()+4-n); const y=new Date(Date.UTC(x.getUTCFullYear(),0,1)); return {week:Math.ceil((((x-y)/86400000)+1)/7), year:x.getUTCFullYear()}; }
-function weeksInISOYear(y){ const d=new Date(Date.UTC(y,11,31)); const day=d.getUTCDay(); return (day===4 || (d.getUTCDate===31 && day===3))?53:52; }
+function weeksInISOYear(y){ const d=new Date(Date.UTC(y,11,31)); const day=d.getUTCDay(); return (day===4 || (d.getUTCDate()===31 && day===3))?53:52; }
 function computeWeeklyTabName(){
   const url=new URL(window.location.href); const override=url.searchParams.get('weeklyTab'); if(override) return override;
   const local=getLocalDate(); const hrs=local.getHours(); const dow=local.getDay(); const iw=isoWeek(local); let w=iw.week;
@@ -390,17 +387,19 @@ async function readDailyApproved(){
   return {id:DAILY_IDS[0], tab:tabs[0], mapByName:new Map(), mapByID:new Map()};
 }
 
-function renderDots(total, activeIndex){
-  const dots=document.getElementById('dots'); dots.innerHTML='';
-  for(let i=0;i<total;i++){ const d=document.createElement('div'); d.className='dot'+(i===activeIndex?' on':''); dots.appendChild(d); }
-}
-function renderPage(list, pageIndex){
+// renderDots y cyclePage han sido eliminados
+
+function renderList(list){
   const tbody=document.querySelector("#tbl tbody"); tbody.innerHTML="";
-  const start=pageIndex*PAGE_SIZE; const page=list.slice(start, start+PAGE_SIZE);
-  const maxToday=Math.max(1, ...page.map(p=>p.today||0)); const maxTotal=Math.max(1, ...page.map(p=>p.total||0));
+  
+  // Como no hay paginación, 'list' es la lista completa.
+  const maxToday=Math.max(1, ...list.map(p=>p.today||0)); 
+  const maxTotal=Math.max(1, ...list.map(p=>p.total||0));
   const toPct=(v,max)=>Math.max(3, Math.min(100, Math.round((v/max)*100)));
-  page.forEach((p,i)=>{
-    const rowIndex=start+i; const today=p.today||0, total=p.total||0;
+  
+  list.forEach((p,i)=>{
+    const rowIndex=i; // El índice 'i' es ahora el índice de clasificación (0-indexado)
+    const today=p.today||0, total=p.total||0;
 
     // celda rank con medallas para top 3 global (por Total)
     let medalHTML='';
@@ -440,7 +439,7 @@ function renderPage(list, pageIndex){
     if(INITIALIZED && today > 0){
       const prevTotal = PREV_T.get(p.idKey) || 0;
       const prevRank  = PREV_R.get(p.idKey);
-      const currentRank = rowIndex + 1;
+      const currentRank = rowIndex + 1; // El rango actual es el índice + 1
 
       if(total > prevTotal && (prevRank === undefined || currentRank < prevRank)){
         showOverlay(p.name, today, currentRank, prevRank);
@@ -449,10 +448,10 @@ function renderPage(list, pageIndex){
   });
 
   // Guardar estado actual para el siguiente ciclo
-  PREV_T = new Map(page.map(p => [p.idKey, p.total]));
-  PREV_R = new Map(page.map((p, i) => [p.idKey, i + start + 1]));
+  PREV_T = new Map(list.map(p => [p.idKey, p.total]));
+  PREV_R = new Map(list.map((p, i) => [p.idKey, i + 1])); // Guardar el índice absoluto
 
-  renderDots(Math.ceil(list.length/PAGE_SIZE), pageIndex);
+  // No hay renderDots
 }
 
 function showOverlay(name, todayScore, currentRank, prevRank){
@@ -554,20 +553,14 @@ async function updateData(){
   INITIALIZED = true;
 }
 
-function cyclePage(){
-  if(ALL_DATA.length === 0) return;
-  const numPages = Math.ceil(ALL_DATA.length / PAGE_SIZE);
-  PAGE_INDEX = (PAGE_INDEX + 1) % numPages;
-  renderPage(ALL_DATA, PAGE_INDEX);
-}
-
-// Initial load and recurring tasks
+// cyclePage eliminado
+// Función de inicialización
 (async function init(){
   await updateData();
-  renderPage(ALL_DATA, PAGE_INDEX);
+  renderList(ALL_DATA); // Renderiza la lista completa
 
-  setInterval(cyclePage, PAGE_MS);
-  setInterval(updateData, DAILY_REFRESH); // Update daily data more frequently
+  // Se mantiene el refresco de datos, pero se elimina el ciclo de páginas
+  setInterval(updateData, DAILY_REFRESH); 
 })();
 </script>
 </body>
