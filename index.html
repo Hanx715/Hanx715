@@ -650,12 +650,20 @@ async function updateData(){
     }
   });
 
-  // Re-sort the merged data by total + today score
+  // ******************************************************
+  // LÓGICA DE CLASIFICACIÓN MODIFICADA:
+  // 1. Clasifica por 'today' (ventas del día) de mayor a menor.
+  // 2. Si hay empate, clasifica por 'total' (ventas semanales acumuladas) de mayor a menor.
+  // ******************************************************
   weeklyData.sort((a, b) => {
+    // Criterio 1: Hoy (Hoy es la prioridad)
+    if ((b.today || 0) !== (a.today || 0)) {
+      return (b.today || 0) - (a.today || 0);
+    }
+    // Criterio 2 (Desempate): Total semanal acumulado (Total + Today)
     const totalA = (a.total||0) + (a.today||0);
     const totalB = (b.total||0) + (b.today||0);
-    if (totalB !== totalA) return totalB - totalA;
-    return (b.today||0) - (a.today||0);
+    return totalB - totalA;
   });
 
   // Filter out agents with 0 total score if not in the top 3 and if initialized
