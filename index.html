@@ -275,7 +275,7 @@ function setVHVar(){ const vh=window.innerHeight*0.01; document.documentElement.
 setVHVar(); window.addEventListener('resize', setVHVar);
 
 /* IDs y API */
-const API_KEY        = "AIzaSyDwOqp2uizZol2et6Uqi7CnntW9Hkrinjg";
+const API_KEY         = "AIzaSyDwOqp2uizZol2et6Uqi7CnntW9Hkrinjg";
 const WEEKLY_SHEETID = "1xNrDZ6uXUS0XMU3033SALOPPORgyjQomH68W2GyTAUo";
 const DAILY_ID_RAW   = "1MeGKl3Qok84NymsXnuHuA4reL_l9Y1SqqLuejIMeaUA";
 
@@ -291,12 +291,26 @@ function setChipDaily(t){ document.getElementById('chipDaily').textContent = `Da
 function getLocalDate(){ const s=new Date().toLocaleString('en-US',{timeZone:TIMEZONE}); return new Date(s); }
 function isoWeek(d){ const x=new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n=x.getUTCDay()||7; x.setUTCDate(x.getUTCDate()+4-n); const y=new Date(Date.UTC(x.getUTCFullYear(),0,1)); return {week:Math.ceil((((x-y)/86400000)+1)/7), year:x.getUTCFullYear()}; }
 function weeksInISOYear(y){ const d=new Date(Date.UTC(y,11,31)); const day=d.getUTCDay(); return (day===4 || (d.getUTCDate()===31 && day===3))?53:52; }
+
 function computeWeeklyTabName(){
   const url=new URL(window.location.href); const override=url.searchParams.get('weeklyTab'); if(override) return override;
   const local=getLocalDate(); const hrs=local.getHours(); const dow=local.getDay(); const iw=isoWeek(local); let w=iw.week;
-  const afterCut=(dow>4)||(dow===4&&hrs>=14); if(afterCut){ w++; const mx=weeksInISOYear(iw.year); if(w>mx){w=1;} }
+  
+  // MODIFICADO: Corte el Miércoles a las 12:00 PM (medio día).
+  // La semana ISO cambia el lunes. Si estamos en Lunes(1), Martes(2) o Miércoles(3) antes de las 12h,
+  // debemos pertenecer a la semana anterior del tablero (que cierra Martes/Miércoles AM).
+  const beforeCut = (dow === 1 || dow === 2 || (dow === 3 && hrs < 12));
+  
+  if(beforeCut){ 
+    w--; 
+    if(w < 1) { 
+      // Si retrocedemos desde la semana 1, vamos a la última del año anterior
+      w = weeksInISOYear(iw.year - 1); 
+    }
+  }
   return `W${w}`;
 }
+
 const emoji=/[\u{1F1E6}-\u{1F1FF}\u{1F300}-\u{1FAFF}\u{1F900}-\u{1F9FF}\u{2600}-\u{27BF}\u{FE0F}]/gu;
 function normName(s){ return (s||"").replace(emoji,"").normalize('NFD').replace(/[\u0300-\u036f]/g,"").replace(/[^\x20-\x7E]/g,"").replace(/\s{2,}/g," ").trim().toUpperCase(); }
 function normID(s){ return (s||"").toString().trim(); }
