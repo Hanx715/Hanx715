@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Cuadrilátero — Cara a Cara</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --dark-bg: #0A0A0A;
+      --ink: #E0E0E0;
+      --glass: rgba(0,0,0, .55);
+      --glass-strong: rgba(0,0,0, .85);
+      --neon-blue: #44CCFF;
+      --neon-purple: #FF44CC;
+      --glow-blue: rgba(44, 204, 255, .4);
+      --glow-purple: rgba(255, 68, 204, .4);
+    }
+    html, body {
+      margin: 0; padding: 20px; min-height: 100vh;
+      background: radial-gradient(ellipse at top, #1a0a2e 0%, var(--dark-bg) 100%);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .container {
+      max-width: 800px; margin: 0 auto;
+      background: var(--glass-strong);
+      padding: 25px; border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    }
+    h2 {
+      margin-top: 0; font-weight: 900; letter-spacing: .5px;
+      text-align: center; color: #fff;
+      filter: drop-shadow(0 0 8px var(--neon-blue));
+    }
+    .selectors {
+      display: flex; gap: 20px; margin-bottom: 30px; justify-content: center;
+    }
+    .select-box {
+      display: flex; flex-direction: column; gap: 5px; flex: 1; max-width: 300px;
+    }
+    label { font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--neon-blue); }
+    select {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2);
+      padding: 10px; border-radius: 8px; color: var(--ink); font-weight: 700;
+      outline: none; cursor: pointer; transition: all 0.3s ease;
+    }
+    select:focus { border-color: var(--neon-purple); box-shadow: 0 0 10px var(--glow-purple); }
+    .chart-wrapper { position: relative; margin: 0 auto; height: 400px; width: 100%; }
+    .no-data { text-align: center; padding: 40px; color: var(--neon-purple); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>⚔️ El Cuadrilátero</h2>
+  <div class="selectors">
+    <div class="select-box">
+      <label>Retador 1 (Azul)</label>
+      <select id="agent1" onchange="updateComparison()"></select>
+    </div>
+    <div class="select-box">
+      <label>Retador 2 (Púrpura)</label>
+      <select id="agent2" onchange="updateComparison()"></select>
+    </div>
+  </div>
+
+  <div class="chart-wrapper">
+    <canvas id="comparisonChart"></canvas>
+  </div>
+  <div id="msg" class="no-data" style="display:none;">Abra el Leaderboard primero para cargar los datos.</div>
+</div>
+
+<script>
+  let rawData = [];
+  let chartInstance = null;
+
+  function init() {
+    const dataString = localStorage.getItem('leaderboardData');
+    if(!dataString) {
+      document.getElementById('msg').style.display = 'block';
+      return;
+    }
+    rawData = JSON.parse(dataString);
+    
+    const s1 = document.getElementById('agent1');
+    const s2 = document.getElementById('agent2');
+    
+    rawData.forEach((agent, index) => {
+      let opt1 = document.createElement('option');
+      opt1.value = agent.idKey; opt1.textContent = agent.name;
+      if(index === 0) opt1.selected = true;
+      s1.appendChild(opt1);
+
+      let opt2 = document.createElement('option');
+      opt2.value = agent.idKey; opt2.textContent = agent.name;
+      if(index === 1 || (rawData.length === 1 && index === 0)) opt2.selected = true;
+      s2.appendChild(opt2);
+    });
+
+    updateComparison();
+  }
+
+  function updateComparison() {
+    const id1 = document.getElementById('agent1').value;
+    const id2 = document.getElementById('agent2').value;
+    
+    const a1 = rawData.find(p => p.idKey === id1);
+    const a2 = rawData.find(p => p.idKey === id2);
+    
+    if(!a1 || !a2) return;
+
+    const labels = ['Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Lunes', 'Martes', 'Hoy'];
+    const data1 = [a1.wed, a1.thu, a1.fri, a1.sat, a1.mon, a1.tue, a1.today];
+    const data2 = [a2.wed, a2.thu, a2.fri, a2.sat, a2.mon, a2.tue, a2.today];
+
+    if(chartInstance) { chartInstance.destroy(); }
+
+    const ctx = document.getElementById('comparisonChart').getContext('2d');
+    chartInstance = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: a1.name,
+            data: data1,
+            backgroundColor: 'rgba(68, 204, 255, 0.2)',
+            borderColor: '#44CCFF',
+            pointBackgroundColor: '#44CCFF',
+            pointBorderColor: '#fff',
+            borderWidth: 2
+          },
+          {
+            label: a2.name,
+            data: data2,
+            backgroundColor: 'rgba(255, 68, 108, 0.2)',
+            borderColor: '#FF44CC',
+            pointBackgroundColor: '#FF44CC',
+            pointBorderColor: '#fff',
+            borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+            pointLabels: { color: '#E0E0E0', font: { size: 12, weight: 'bold' } },
+            ticks: { display: false, backdropColor: 'transparent' }
+          }
+        },
+        plugins: {
+          legend: { labels: { color: '#FFF', font: { weight: 'bold' } } }
+        }
+      }
+    });
+  }
+
+  window.onload = init;
+</script>
+</body>
+</html>
