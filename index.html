@@ -118,7 +118,7 @@
   
   /* Columnas */
   th.col-rank, td.col-rank { width:9%; text-align:center; }
-  th.col-agent,td.col-agent{ width:30%; text-align:left; } /* Mismo ancho, más espacio para texto */
+  th.col-agent,td.col-agent{ width:30%; text-align:left; } 
   th.col-today,td.col-today{ width:12%; text-align:center; }
   th.col-day,  td.col-day  { width:7%;  text-align:center; }
   th.col-total,td.col-total{ width:12%; text-align:center; }
@@ -141,7 +141,7 @@
       overflow:hidden; 
       text-overflow:ellipsis; 
       white-space:nowrap; 
-      font-size: 1.1em; /* Texto un poco más grande para llenar el vacío */
+      font-size: 1.1em; 
       padding-left: 5px;
   }
 
@@ -168,29 +168,49 @@
     margin-right:8px; font-weight:1000; font-size:16px; line-height:1;
     border:1px solid rgba(255,255,255,.2);
     box-shadow: 0 4px 6px rgba(0,0,0,.5);
-    color: #000; text-shadow: none; /* Texto negro para contraste en metal */
+    color: #000; text-shadow: none; 
   }
-  /* ORO REALISTA */
   .gold { 
     background: linear-gradient(135deg, #FFD700, #FDB931, #FFD700); 
     box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
     border-color: #FFED00;
   }
-  /* PLATA REALISTA */
   .silver{ 
     background: linear-gradient(135deg, #E0E0E0, #F5F5F5, #BDBDBD); 
     box-shadow: 0 0 15px rgba(192, 192, 192, 0.5);
     border-color: #FFFFFF;
   }
-  /* COBRE/BRONCE REALISTA */
   .bronze{ 
     background: linear-gradient(135deg, #E67E22, #D35400, #A04000); 
     box-shadow: 0 0 15px rgba(211, 84, 0, 0.5);
     border-color: #F39C12;
-    color: #fff; /* Texto blanco para mejor contraste en cobre oscuro */
+    color: #fff; 
   }
   
   .rankwrap{ display:flex; align-items:center; justify-content:center; gap:6px; }
+
+  /* ===== BOTONES FLOTANTES (FAB) ===== */
+  .fab-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--glass-strong);
+    border: 1px solid var(--neon-blue);
+    box-shadow: 0 0 10px var(--glow-blue);
+    text-decoration: none;
+    font-size: 24px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+    backdrop-filter: blur(5px);
+  }
+  .fab-btn:hover {
+    transform: scale(1.15) translateY(-5px);
+    box-shadow: 0 0 20px var(--glow-purple);
+    border-color: var(--neon-purple);
+    background: rgba(0,0,0,0.9);
+  }
 
   /* MOBILE */
   @media (max-width: 768px) {
@@ -227,6 +247,16 @@
     .bar { height: 18px; flex-grow: 1; margin-left: 10px; }
     .rankwrap { justify-content: flex-end; }
     .medal { margin-right: 0; }
+
+    /* Ajuste de botones flotantes para móviles */
+    #action-fab-container {
+      bottom: 15px !important;
+      right: 15px !important;
+      gap: 10px !important;
+    }
+    .fab-btn {
+      width: 45px; height: 45px; font-size: 20px;
+    }
   }
 </style>
 </head>
@@ -268,6 +298,18 @@
   <div id='meta'>
     <div id='diag'>Loading…</div>
   </div>
+</div>
+
+<div id="action-fab-container" style="position: fixed; bottom: 25px; right: 25px; display: flex; flex-direction: column; gap: 15px; z-index: 100;">
+  
+  <a href="comparador.html" target="_blank" class="fab-btn" title="Comparar Agentes (Cuadrilátero)">
+    ⚔️
+  </a>
+
+  <a href="analitica.html" target="_blank" class="fab-btn" title="Analítica Histórica (Máquina del Tiempo)">
+    ⏳
+  </a>
+
 </div>
 
 <script>
@@ -499,6 +541,9 @@ async function updateData(){
   
   const totalToday = ALL_DATA.reduce((sum, p) => sum + (p.today || 0), 0);
   updateTotalDisplay(totalToday);
+
+  // === GUARDAR DATOS EN LOCALSTORAGE PARA LOS MÓDULOS SECUNDARIOS ===
+  localStorage.setItem('leaderboardData', JSON.stringify(ALL_DATA));
 
   diag(`Updated ${new Date().toLocaleTimeString('en-US', {timeZone: TIMEZONE, hour12: false})} (${weeklyTab})`);
 }
