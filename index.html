@@ -134,7 +134,7 @@
   tbody tr{ transition: transform .25s ease, box-shadow .25s ease; }
   tbody tr:hover{ transform: translateY(-2px); box-shadow:0 0 18px var(--glow-blue); background: rgba(0,0,0,.8); }
 
-  /* Ajuste de Nombre (Sin Avatar) */
+  /* Ajuste de Nombre */
   .agent-wrap{ display:flex; align-items:center; min-width:0; }
   .name{ 
       font-weight:900; 
@@ -161,7 +161,7 @@
 
   #meta{ display:flex;justify-content:flex-start;align-items:center; font-weight:800; font-size:calc(1.5*var(--vh)); }
 
-  /* ===== NUEVAS MEDALLAS (Realistas) ===== */
+  /* ===== MEDALLAS ===== */
   .medal{
     display:inline-grid; place-items:center;
     width:38px; height:38px; border-radius:50%;
@@ -200,7 +200,7 @@
     background: var(--glass-strong);
     border: 1px solid var(--neon-blue);
     box-shadow: 0 0 10px var(--glow-blue);
-    text-decoration: none;
+    cursor: pointer;
     font-size: 24px;
     transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
     backdrop-filter: blur(5px);
@@ -210,6 +210,74 @@
     box-shadow: 0 0 20px var(--glow-purple);
     border-color: var(--neon-purple);
     background: rgba(0,0,0,0.9);
+  }
+
+  /* ===== NUEVA INTERFAZ DE VENTANA FLOTANTE (MODAL) ===== */
+  #cyber-modal {
+    display: none; /* Se activa vía JS */
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 200; /* Asegura estar por delante de todo */
+    backdrop-filter: blur(8px);
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  .modal-frame-container {
+    position: relative;
+    width: 90vw;
+    height: 85vh;
+    background: var(--dark-bg);
+    border: 2px solid var(--neon-blue);
+    box-shadow: 0 0 35px var(--glow-blue);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes modalSlideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-header {
+    background: rgba(15, 5, 29, 0.9);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .modal-title {
+    font-weight: 900;
+    font-size: calc(1.6 * var(--vh));
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    filter: drop-shadow(0 0 5px var(--neon-blue));
+  }
+  .modal-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--neon-purple);
+    font-size: 26px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+  .modal-close-btn:hover {
+    transform: scale(1.2);
+    color: #fff;
+    filter: drop-shadow(0 0 8px var(--neon-purple));
+  }
+  .modal-body-iframe {
+    flex: 1;
+    border: none;
+    background: transparent;
+    width: 100%;
+    height: 100%;
   }
 
   /* MOBILE */
@@ -248,15 +316,9 @@
     .rankwrap { justify-content: flex-end; }
     .medal { margin-right: 0; }
 
-    /* Ajuste de botones flotantes para móviles */
-    #action-fab-container {
-      bottom: 15px !important;
-      right: 15px !important;
-      gap: 10px !important;
-    }
-    .fab-btn {
-      width: 45px; height: 45px; font-size: 20px;
-    }
+    #action-fab-container { bottom: 15px !important; right: 15px !important; gap: 10px !important; }
+    .fab-btn { width: 45px; height: 45px; font-size: 20px; }
+    .modal-frame-container { width: 95vw; height: 90vh; }
   }
 </style>
 </head>
@@ -301,15 +363,22 @@
 </div>
 
 <div id="action-fab-container" style="position: fixed; bottom: 25px; right: 25px; display: flex; flex-direction: column; gap: 15px; z-index: 100;">
-  
-  <a href="comparador.html" target="_blank" class="fab-btn" title="Comparar Agentes (Cuadrilátero)">
+  <div onclick="launchFloatingWindow('comparador.html', '⚔️ El Cuadrilátero — Cara a Cara')" class="fab-btn" title="Comparar Agentes (Cuadrilátero)">
     ⚔️
-  </a>
-
-  <a href="analitica.html" target="_blank" class="fab-btn" title="Analítica Histórica (Máquina del Tiempo)">
+  </div>
+  <div onclick="launchFloatingWindow('analitica.html', '⏳ Máquina del Tiempo — Línea Temporal')" class="fab-btn" title="Analítica Histórica (Máquina del Tiempo)">
     ⏳
-  </a>
+  </div>
+</div>
 
+<div id="cyber-modal">
+  <div class="modal-frame-container">
+    <div class="modal-header">
+      <span id="cyber-modal-title" class="modal-title">Ventana Flotante</span>
+      <button onclick="dismissFloatingWindow()" class="modal-close-btn" title="Volver al Tablero">✕</button>
+    </div>
+    <iframe id="cyber-modal-iframe" class="modal-body-iframe" src=""></iframe>
+  </div>
 </div>
 
 <script>
@@ -338,15 +407,11 @@ function computeWeeklyTabName(){
   const url=new URL(window.location.href); const override=url.searchParams.get('weeklyTab'); if(override) return override;
   const local=getLocalDate(); const hrs=local.getHours(); const dow=local.getDay(); const iw=isoWeek(local); let w=iw.week;
   
-  // MODIFICADO: Corte el Miércoles a las 12:00 PM (medio día).
-  // La semana ISO cambia el lunes. Si estamos en Lunes(1), Martes(2) o Miércoles(3) antes de las 12h,
-  // debemos pertenecer a la semana anterior del tablero (que cierra Martes/Miércoles AM).
   const beforeCut = (dow === 1 || dow === 2 || (dow === 3 && hrs < 12));
   
   if(beforeCut){ 
     w--; 
     if(w < 1) { 
-      // Si retrocedemos desde la semana 1, vamos a la última del año anterior
       w = weeksInISOYear(iw.year - 1); 
     }
   }
@@ -430,7 +495,7 @@ async function readDailyApproved(){
         const rowsFK=Math.max(A.length,B.length,C.length); for(let i=0;i<rowsFK;i++) addPair(A[i],B[i],C[i]);
         const rowsRG=Math.max(E.length,F.length,G.length); for(let i=0;i<rowsRG;i++) addPair(E[i],F[i],G[i]);
         return {id, tab, mapByName, mapByID};
-      }catch(e){ /* intenta siguiente tab */ }
+      }catch(e){ }
     }
   }
   return {id:DAILY_IDS[0], tab:tabs[0], mapByName:new Map(), mapByID:new Map()};
@@ -490,7 +555,6 @@ function renderList(list){
     `;
     tbody.appendChild(tr);
 
-    // Animación de barras
     setTimeout(()=>{
       tr.querySelector('.bar.today > .fill').style.width = toPct(today, maxToday) + '%';
       tr.querySelector('.bar.total > .fill').style.width = toPct(total, maxTotal) + '%';
@@ -510,7 +574,6 @@ async function updateData(){
   
   setChipDaily(dailyData.tab);
   
-  // Merge daily scores into weekly structure
   const tempMap = new Map();
   weeklyData.forEach(p => tempMap.set(p.idKey, p));
   
@@ -542,13 +605,26 @@ async function updateData(){
   const totalToday = ALL_DATA.reduce((sum, p) => sum + (p.today || 0), 0);
   updateTotalDisplay(totalToday);
 
-  // === GUARDAR DATOS EN LOCALSTORAGE PARA LOS MÓDULOS SECUNDARIOS ===
   localStorage.setItem('leaderboardData', JSON.stringify(ALL_DATA));
 
   diag(`Updated ${new Date().toLocaleTimeString('en-US', {timeZone: TIMEZONE, hour12: false})} (${weeklyTab})`);
 }
 
-// Función de inicialización
+/* === NUEVAS FUNCIONES PARA CONTROLAR LAS VENTANAS FLOTANTES === */
+function launchFloatingWindow(url, titleText) {
+  document.getElementById('cyber-modal-title').textContent = titleText;
+  document.getElementById('cyber-modal-iframe').src = url;
+  document.getElementById('cyber-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden'; /* Bloquea el scroll del fondo */
+}
+
+function dismissFloatingWindow() {
+  document.getElementById('cyber-modal').style.display = 'none';
+  document.getElementById('cyber-modal-iframe').src = ''; /* Limpia memoria */
+  document.body.style.overflow = 'auto'; /* Restaura scroll */
+}
+
+// Inicialización
 (async function init(){
   await updateData();
   renderList(ALL_DATA); 
@@ -557,4 +633,3 @@ async function updateData(){
 </script>
 </body>
 </html>
-
