@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Máquina del Tiempo — Línea Temporal</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --dark-bg: #0A0A0A;
+      --ink: #E0E0E0;
+      --glass-strong: rgba(0,0,0, .85);
+      --neon-blue: #44CCFF;
+      --neon-purple: #FF44CC;
+      --glow-purple: rgba(255, 68, 204, .4);
+    }
+    html, body {
+      margin: 0; padding: 20px; min-height: 100vh;
+      background: radial-gradient(ellipse at bottom, #0f051d 0%, var(--dark-bg) 100%);
+      color: var(--ink); font-family: system-ui, -apple-system, sans-serif;
+    }
+    .container {
+      max-width: 900px; margin: 0 auto;
+      background: var(--glass-strong); padding: 25px; border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    }
+    h2 {
+      margin-top: 0; font-weight: 900; text-align: center; color: #fff;
+      filter: drop-shadow(0 0 8px var(--neon-purple));
+    }
+    .selectors { display: flex; margin-bottom: 30px; justify-content: center; }
+    .select-box { display: flex; flex-direction: column; gap: 5px; flex: 1; max-width: 400px; }
+    label { font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--neon-purple); }
+    select {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2);
+      padding: 10px; border-radius: 8px; color: var(--ink); font-weight: 700;
+      outline: none; cursor: pointer; transition: all 0.3s ease;
+    }
+    select:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(44, 204, 255, .4); }
+    .chart-wrapper { position: relative; height: 420px; width: 100%; }
+    .no-data { text-align: center; padding: 40px; color: var(--neon-blue); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>⏳ Máquina del Tiempo</h2>
+  <div class="selectors">
+    <div class="select-box">
+      <label>Seleccionar Agente para Historial</label>
+      <select id="agentSelect" onchange="updateTimeline()"></select>
+    </div>
+  </div>
+
+  <div class="chart-wrapper">
+    <canvas id="timelineChart"></canvas>
+  </div>
+  <div id="msg" class="no-data" style="display:none;">Abra el Leaderboard primero para cargar los datos.</div>
+</div>
+
+<script>
+  let rawData = [];
+  let chartInstance = null;
+  let teamAverage = [0, 0, 0, 0, 0, 0, 0];
+
+  function init() {
+    const dataString = localStorage.getItem('leaderboardData');
+    if(!dataString) {
+      document.getElementById('msg').style.display = 'block';
+      return;
+    }
+    rawData = JSON.parse(dataString);
+    
+    // Calcular media del equipo por día
+    if(rawData.length > 0) {
+      let sums = [0,0,0,0,0,0,0];
+      rawData.forEach(p => {
+        sums[0] += p.wed||0; sums[1] += p.thu||0; sums[2] += p.fri||0;
+        sums[3] += p.sat||0; sums[4] += p.mon||0; sums[5] += p.tue||0;
+        sums[6] += p.today||0;
+      });
+      teamAverage = sums.map(val => parseFloat((val / rawData.length).toFixed(1)));
+    }
+
+    const select = document.getElementById('agentSelect');
+    rawData.forEach((agent, index) => {
+      let opt = document.createElement('option');
+      opt.value = agent.idKey;
+      opt.textContent = `${index + 1}. ${agent.name}`;
+      select.appendChild(opt);
+    });
+
+    updateTimeline();
+  }
+
+  function updateTimeline() {
+    const id = document.getElementById('agentSelect').value;
+    const agent = rawData.find(p => p.idKey === id);
+    if(!agent) return;
+
+    const labels = ['Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Lunes', 'Martes', 'Hoy'];
+    const agentData = [agent.wed, agent.thu, agent.fri, agent.sat, agent.mon, agent.tue, agent.today];
+
+    if(chartInstance) { chartInstance.destroy(); }
+
+    const ctx = document.getElementById('timelineChart').getContext('2d');
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: `Rendimiento de ${agent.name}`,
+            data: agentData,
+            borderColor: '#FF44CC',
+            backgroundColor: 'transparent',
+            pointBackgroundColor: '#FF44CC',
+            borderWidth: 3,
+            tension: 0.3,
+            fill: false
+          },
+          {
+            label: 'Media del Equipo',
+            data: teamAverage,
+            borderColor: '#44CCFF',
+            backgroundColor: 'transparent',
+            pointBackgroundColor: '#44CCFF',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            tension: 0.3,
+            fill: false,
+            alpha: 0.5
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#FFF', font: { weight: 'bold' } } }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+            ticks: { color: '#E0E0E0', font: { weight: 'bold' } }
+          },
+          y: {
+            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+            ticks: { color: '#E0E0E0' },
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+  window.onload = init;
+</script>
+</body>
+</html>
