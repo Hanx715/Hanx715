@@ -6,62 +6,138 @@
     <title>Transfer Tracker</title>
 
     <link rel="stylesheet" href="style.css">
+
+    <!-- === OVERRIDE: TEMA DARK NEON (LEADERBOARD) === -->
+    <style>
+      :root {
+        --dark-bg: #0A0A0A; 
+        --glass: rgba(0, 0, 0, 0.65);
+        --neon-blue: #44CCFF;
+        --neon-purple: #FF44CC;
+        --neon-green: #00ffcc;
+        --neon-red: #ff3366;
+        --ink: #E0E0E0;
+      }
+
+      body, html {
+        background: var(--dark-bg) !important;
+        background-image: radial-gradient(ellipse at top, #1a0a2e 0%, var(--dark-bg) 100%) !important;
+        color: var(--ink) !important;
+      }
+
+      /* Tarjetas y Contenedores */
+      .top-scoreboard, .entry-card, .activity-card, .week-summary, .history-card, .backup-card, .payroll-modal-content {
+        background: var(--glass) !important;
+        border: 1px solid rgba(44, 204, 255, 0.2) !important;
+        box-shadow: 0 0 15px rgba(44, 204, 255, 0.1) !important;
+        backdrop-filter: blur(8px) !important;
+        color: #fff !important;
+      }
+
+      /* Títulos y Encabezados */
+      h1, h2, h3, .header-title, label {
+        color: #fff !important;
+        text-shadow: 0 0 8px var(--neon-blue) !important;
+        letter-spacing: 0.5px !important;
+      }
+
+      /* Textareas y Entradas de Texto */
+      textarea, input {
+        background: rgba(0, 0, 0, 0.8) !important;
+        border: 1px solid rgba(44, 204, 255, 0.4) !important;
+        color: var(--neon-blue) !important;
+        border-radius: 8px !important;
+      }
+      textarea:focus, input:focus {
+        outline: none !important;
+        border-color: var(--neon-blue) !important;
+        box-shadow: 0 0 12px rgba(44, 204, 255, 0.6) !important;
+      }
+      textarea::placeholder {
+        color: rgba(224, 224, 224, 0.4) !important;
+      }
+
+      /* Botones de Acción (Approved / Declined) */
+      .approve {
+        background: rgba(0, 255, 204, 0.1) !important;
+        border: 1px solid var(--neon-green) !important;
+        color: var(--neon-green) !important;
+        text-shadow: 0 0 5px rgba(0, 255, 204, 0.5) !important;
+        box-shadow: 0 0 10px rgba(0, 255, 204, 0.2) !important;
+      }
+      .approve:hover { background: rgba(0, 255, 204, 0.2) !important; box-shadow: 0 0 20px rgba(0, 255, 204, 0.6) !important; }
+
+      .decline {
+        background: rgba(255, 51, 102, 0.1) !important;
+        border: 1px solid var(--neon-red) !important;
+        color: var(--neon-red) !important;
+        text-shadow: 0 0 5px rgba(255, 51, 102, 0.5) !important;
+        box-shadow: 0 0 10px rgba(255, 51, 102, 0.2) !important;
+      }
+      .decline:hover { background: rgba(255, 51, 102, 0.2) !important; box-shadow: 0 0 20px rgba(255, 51, 102, 0.6) !important; }
+
+      /* Cifras Numéricas y Contadores */
+      #todayApproved, #todayDeclined, #weekApproved, #weekDeclined, #lifetimeTransfers {
+        color: var(--neon-blue) !important;
+        text-shadow: 0 0 10px rgba(44, 204, 255, 0.7) !important;
+      }
+      
+      /* Valores de Dinero / Bonos */
+      .today-bonus, #weekBonus, #lifetimeEarnings {
+        color: var(--neon-purple) !important;
+        text-shadow: 0 0 10px rgba(255, 68, 204, 0.7) !important;
+      }
+
+      /* Botones Secundarios (Backup, History, etc.) */
+      .backup-button, .payroll-history-button, .clear-data-button, .activity-header {
+        background: rgba(44, 204, 255, 0.1) !important;
+        border: 1px solid rgba(44, 204, 255, 0.4) !important;
+        color: var(--ink) !important;
+      }
+      .backup-button:hover, .payroll-history-button:hover {
+        background: rgba(44, 204, 255, 0.2) !important;
+        border-color: var(--neon-blue) !important;
+        box-shadow: 0 0 10px rgba(44, 204, 255, 0.5) !important;
+      }
+      
+      /* Modal de Nómina */
+      .payroll-modal { background: rgba(0, 0, 0, 0.85) !important; backdrop-filter: blur(8px) !important; }
+      .payroll-close-button { color: var(--neon-purple) !important; }
+      .payroll-close-button:hover { filter: drop-shadow(0 0 8px var(--neon-purple)) !important; }
+    </style>
 </head>
 <body>
 
 <div class="app">
 
-          <header class="top-scoreboard">
+    <header class="top-scoreboard">
         
-            <div class="header-title">
+        <div class="header-title">
+            <h1>Transfer Tracker</h1>
+            <div id="currentDate"></div>
+        </div>
         
-                <h1>Transfer Tracker</h1>
-        
-                <div id="currentDate"></div>
-        
+        <div class="today-score">
+            <div class="score-item approved-score">
+                <span>Approved</span>
+                <strong id="todayApproved">0</strong>
             </div>
-        
-        
-            <div class="today-score">
-        
-                <div class="score-item approved-score">
-        
-                    <span>Approved</span>
-        
-                    <strong id="todayApproved">
-                        0
-                    </strong>
-        
-                </div>
-        
-        
-                <div class="score-item declined-score">
-        
-                    <span>Declined</span>
-        
-                    <strong id="todayDeclined">
-                        0
-                    </strong>
-        
-                </div>
-        
-        
-                <div class="score-bonus">
-        
-                    <span>Today's Bonus</span>
-        
-                    <strong class="today-bonus">$0</strong>
-        
-                </div>
-        
+            
+            <div class="score-item declined-score">
+                <span>Declined</span>
+                <strong id="todayDeclined">0</strong>
             </div>
+            
+            <div class="score-bonus">
+                <span>Today's Bonus</span>
+                <strong class="today-bonus">$0</strong>
+            </div>
+        </div>
         
-        </header>
+    </header>
 
     <section class="entry-card">
-
         <label for="customerInput">Customer Info</label>
-
         <textarea
             id="customerInput"
             placeholder="#0854305John Smith"
@@ -69,7 +145,6 @@
         ></textarea>
 
         <label for="phoneInput">Phone Number</label>
-
         <textarea
             id="phoneInput"
             placeholder="(555) 555-5555"
@@ -77,228 +152,135 @@
         ></textarea>
 
         <div class="button-row">
-
             <button id="approveBtn" class="approve">
                 ✅ Approved (A)
             </button>
-
             <button id="declineBtn" class="decline">
                 ❌ Declined (D)
             </button>
-
         </div>
-
     </section>
 
-    
-
-
     <section class="activity-card">
+        <button class="activity-header" id="activityToggle">
+            <div>
+                <h2>Recent Activity</h2>
+                <span class="activity-subtitle" id="activitySubtitle">
+                    No recent transfers
+                </span>
+            </div>
+            <span class="activity-chevron">⌄</span>
+        </button>
 
-    <button class="activity-header" id="activityToggle">
+        <div class="recent-activity-content" id="recentActivityContent">
+            <div id="recentTransfers"></div>
+        </div>
+    </section>
 
-        <div>
-            <h2>Recent Activity</h2>
-
-            <span class="activity-subtitle" id="activitySubtitle">
-                No recent transfers
-            </span>
+    <section class="week-summary">
+        <h3>Current Week</h3>
+        <div class="week-range">
+            Wednesday → Tuesday
         </div>
 
-        <span class="activity-chevron">⌄</span>
+        <div class="week-row">
+            <span>Approved</span>
+            <strong id="weekApproved">0</strong>
+        </div>
 
-    </button>
+        <div class="week-row">
+            <span>Declined</span>
+            <strong id="weekDeclined">0</strong>
+        </div>
 
-
-    <div class="recent-activity-content" id="recentActivityContent">
-
-        <div id="recentTransfers"></div>
-
-    </div>
-
-</section>
-
-
-<section class="week-summary">
-
-    <h3>Current Week</h3>
-
-    <div class="week-range">
-        Wednesday → Tuesday
-    </div>
-
-    <div class="week-row">
-
-        <span>Approved</span>
-
-        <strong id="weekApproved">
-            0
-        </strong>
-
-    </div>
-
-    <div class="week-row">
-
-        <span>Declined</span>
-
-        <strong id="weekDeclined">
-            0
-        </strong>
-
-    </div>
-
-    <div class="week-row">
-
-        <span>Bonus</span>
-
-        <strong id="weekBonus">
-            $0
-        </strong>
-
-    </div>
-
-</section>
-
+        <div class="week-row">
+            <span>Bonus</span>
+            <strong id="weekBonus">$0</strong>
+        </div>
+    </section>
 
     <section class="history-card">
-
-    <h2>History</h2>
-
-
-    <div class="history-summary">
-
-        <div class="history-stat">
-
-            <span>Lifetime Earnings</span>
-
-            <strong id="lifetimeEarnings">
-                $0.00
-            </strong>
-
+        <h2>History</h2>
+        <div class="history-summary">
+            <div class="history-stat">
+                <span>Lifetime Earnings</span>
+                <strong id="lifetimeEarnings">$0.00</strong>
+            </div>
+            <div class="history-stat">
+                <span>Total Transfers</span>
+                <strong id="lifetimeTransfers">0</strong>
+            </div>
         </div>
 
-
-        <div class="history-stat">
-
-            <span>Total Transfers</span>
-
-            <strong id="lifetimeTransfers">
-                0
-            </strong>
-
-        </div>
-
-    </div>
-
-
-    <button
-        id="payrollHistoryBtn"
-        class="payroll-history-button">
-
-        View Payroll History
-
-    </button>
-
-</section>
+        <button
+            id="payrollHistoryBtn"
+            class="payroll-history-button">
+            View Payroll History
+        </button>
+    </section>
 
     <section class="backup-card">
-
-    <h2>Data & Backup</h2>
-
-    <div class="backup-actions">
-
-        <button
-            id="exportBackupBtn"
-            class="backup-button">
-
-            Export Backup
-
-        </button>
-
-        <button
-            id="importBackupBtn"
-            class="backup-button">
-
-            Import Backup
-
-        </button>
-
-    </div>
-
-        <button
-        id="clearLocalDataBtn"
-        class="clear-data-button">
-    
-        Clear Local Transfer Data
-    
-        </button>
-
-
-
-        
-    <div
-        id="backupStatus"
-        class="backup-status">
-    </div>
-
-    <input
-        type="file"
-        id="importBackupInput"
-        accept=".json,application/json"
-        hidden>
-
-</section>
-
-    
-
-<div
-    id="payrollModal"
-    class="payroll-modal">
-
-    <div class="payroll-modal-content">
-
-        <div class="payroll-modal-header">
-
-            <div>
-
-                <h2>Payroll History</h2>
-
-                <div class="payroll-modal-subtitle">
-                    Wednesday → Tuesday
-                </div>
-
-            </div>
-
-
+        <h2>Data & Backup</h2>
+        <div class="backup-actions">
             <button
-                id="closePayrollModal"
-                class="payroll-close-button">
-
-                ×
-
+                id="exportBackupBtn"
+                class="backup-button">
+                Export Backup
             </button>
-
+            <button
+                id="importBackupBtn"
+                class="backup-button">
+                Import Backup
+            </button>
         </div>
 
-
-       <div
-    id="payrollHistoryTable"
-    class="payroll-history-table">
-
-        </div>
-        
+        <button
+            id="clearLocalDataBtn"
+            class="clear-data-button">
+            Clear Local Transfer Data
+        </button>
         
         <div
-            id="payrollDayView"
-            class="payroll-day-view">
-        
+            id="backupStatus"
+            class="backup-status">
         </div>
 
+        <input
+            type="file"
+            id="importBackupInput"
+            accept=".json,application/json"
+            hidden>
+    </section>
+
+    <div
+        id="payrollModal"
+        class="payroll-modal">
+        <div class="payroll-modal-content">
+            <div class="payroll-modal-header">
+                <div>
+                    <h2>Payroll History</h2>
+                    <div class="payroll-modal-subtitle">
+                        Wednesday → Tuesday
+                    </div>
+                </div>
+                <button
+                    id="closePayrollModal"
+                    class="payroll-close-button">
+                    ×
+                </button>
+            </div>
+
+            <div
+                id="payrollHistoryTable"
+                class="payroll-history-table">
+            </div>
+            
+            <div
+                id="payrollDayView"
+                class="payroll-day-view">
+            </div>
+        </div>
     </div>
-
-</div>
-
-    
     
 </div>
 
