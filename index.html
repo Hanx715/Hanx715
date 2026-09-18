@@ -16,6 +16,8 @@
     --neon-purple: #FF44CC;
     --glow-blue: rgba(44, 204, 255, .6);
     --glow-purple: rgba(255, 68, 204, .5);
+    /* Se añade el verde cian para destacar el Tracker si lo desea a futuro */
+    --neon-green: #00ffcc;
   }
   
   /* ===== BACKGROUND ===== */
@@ -212,6 +214,12 @@
     background: rgba(0,0,0,0.9);
   }
 
+  /* Rastreador específico - override para destacar en hover */
+  .fab-btn.tracker-btn:hover {
+    box-shadow: 0 0 20px rgba(0, 255, 204, 0.6);
+    border-color: var(--neon-green);
+  }
+
   /* ===== NUEVA INTERFAZ DE VENTANA FLOTANTE (MODAL) ===== */
   #cyber-modal {
     display: none; /* Se activa vía JS */
@@ -238,6 +246,8 @@
     flex-direction: column;
     animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
+  
+  /* Si el iframe es del tracker (fondo claro), la cabecera se ajusta estéticamente */
   @keyframes modalSlideUp {
     from { transform: translateY(30px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
@@ -275,7 +285,8 @@
   .modal-body-iframe {
     flex: 1;
     border: none;
-    background: transparent;
+    /* Forzamos un fondo blanco base para el iframe en caso de que tarde en cargar */
+    background: #eef2f5; 
     width: 100%;
     height: 100%;
   }
@@ -363,11 +374,20 @@
 </div>
 
 <div id="action-fab-container" style="position: fixed; bottom: 25px; right: 25px; display: flex; flex-direction: column; gap: 15px; z-index: 100;">
+  
+  <!-- BOTÓN: EL CUADRILÁTERO -->
   <div onclick="launchFloatingWindow('comparador.html', '⚔️ El Cuadrilátero — Cara a Cara')" class="fab-btn" title="Comparar Agentes (Cuadrilátero)">
     ⚔️
   </div>
+  
+  <!-- BOTÓN: MÁQUINA DEL TIEMPO -->
   <div onclick="launchFloatingWindow('analitica.html', '⏳ Máquina del Tiempo — Línea Temporal')" class="fab-btn" title="Analítica Histórica (Máquina del Tiempo)">
     ⏳
+  </div>
+
+  <!-- NUEVO BOTÓN: TRANSFER TRACKER -->
+  <div onclick="launchFloatingWindow('./transfer-tracker/index.html', '📊 Transfer Tracker')" class="fab-btn tracker-btn" title="Registro Diario (XFER Tracker)">
+    📊
   </div>
 </div>
 
